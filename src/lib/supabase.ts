@@ -1,10 +1,22 @@
 // @ts-nocheck
 import { createClient } from '@supabase/supabase-js';
-import config from '../config/master';
+import config from './master';
 
-const supabaseUrl = config.supabaseUrl || 'https://placeholder.supabase.co';
-const supabaseKey = config.supabaseKey || 'placeholder';
+const getValidUrl = (url: string) => {
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    return url;
+  }
+  return 'https://placeholder-project.supabase.co';
+};
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const getValidKey = (key: string) => {
+  return key && key.length > 0 ? key : 'placeholder-key';
+};
+
+export const supabase = createClient(
+  getValidUrl(config.supabaseUrl),
+  getValidKey(config.supabaseKey)
+);
 
 export default supabase;
+                     
