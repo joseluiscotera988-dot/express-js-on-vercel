@@ -1,415 +1,232 @@
-// @ts-nocheck
-import express from 'express';
-import { createClient } from '@supabase/supabase-js';
-
+const express = require('express');
 const app = express();
-app.use(express.json());
 
-const getSupabase = () => {
-  const url = (process.env.SUPABASE_URL || '').trim();
-  const key = (process.env.SUPABASE_KEY || '').trim();
-  if (!url || !key || !url.startsWith('http')) return null;
-  return createClient(url, key);
-};
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
 
-const logEvent = async (supabase: any, transaction_id: string, event: string, details: any = {}) => {
-  try {
-    await supabase.from('escrow_logs').insert([{ transaction_id, event, details }]);
-  } catch (e) {}
-};
-
-// =============================================================================
-// FRONTEND INTERACTIVO (CSS + JS NATIVO EMBEBIDO)
-// =============================================================================
 app.get('/', (req, res) => {
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.status(200).send(`
+  res.send(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escrow Manager Pro</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #090d16; color: #f1f5f9; padding: 16px; margin: 0; }
-    .container { max-width: 650px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 12px; }
-    h2 { font-size: 18px; color: #10b981; margin: 0; }
-    .card { background: #131c2e; border: 1px solid #1e293b; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
-    h3 { font-size: 14px; margin-top: 0; color: #cbd5e1; margin-bottom: 12px; }
-    input, select { background: #090d16; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 8px; font-size: 13px; outline: none; }
-    button { background: #059669; color: #fff; font-weight: bold; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 13px; transition: background 0.2s; }
-    button:hover { background: #10b981; }
-    .btn-sm { width: auto; padding: 6px 10px; font-size: 11px; margin-right: 4px; }
-    .btn-blue { background: #2563eb; } .btn-blue:hover { background: #3b82f6; }
-    .btn-red { background: #dc2626; } .btn-red:hover { background: #ef4444; }
-    .btn-gray { background: #334155; } .btn-gray:hover { background: #475569; }
-    .item { background: #090d16; border: 1px solid #1e293b; padding: 12px; border-radius: 8px; margin-top: 8px; }
-    .flex { display: flex; justify-content: space-between; align-items: center; }
-    .flex-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
-    .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #334155; text-transform: uppercase; font-weight: bold; display: inline-block; }
-    .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-funded { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-disputed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .fee-info { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
-    .filter-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; }
-    .error-box { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 8px; font-size: 12px; font-mono: true; }
-  </style>
+  <title>EscrowGuard - Inicio y Registro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>🛡️ Escrow System Pro</h2>
-      <button class="btn-sm btn-gray" onclick="loadAll()">🔄 Actualizar</button>
-    </div>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-    <!-- CREAR ORDEN -->
-    <div class="card">
-      <h3>➕ Crear Nueva Orden de Escrow</h3>
-      <input id="buyer" placeholder="ID Comprador (ej: cliente_01)">
-      <input id="seller" placeholder="ID Vendedor (ej: vendedora_99)">
-      <input id="amount" type="number" placeholder="Monto ($)" oninput="calcFee()">
-      <div id="feeBox" class="fee-info">Plataforma retiene 3% de comisión.</div>
-      <input id="desc" placeholder="Descripción del producto o servicio">
-      <button onclick="createTx()">Crear Transacción Retenida</button>
-    </div>
-
-    <!-- LISTADO CON FILTROS -->
-    <div class="card">
-      <h3>📋 Transacciones Registradas</h3>
-      <input id="searchInput" placeholder="🔍 Buscar por ID o descripción..." oninput="filterTx()">
-      <div class="filter-bar">
-        <button class="btn-sm btn-gray" onclick="setFilter('all')">Todas</button>
-        <button class="btn-sm btn-gray" onclick="setFilter('pending')">Pendientes</button>
-        <button class="btn-sm btn-gray" onclick="setFilter('funded')">Retenidas</button>
-        <button class="btn-sm btn-gray" onclick="setFilter('completed')">Completadas</button>
-        <button class="btn-sm btn-gray" onclick="setFilter('disputed')">Disputadas</button>
+  <!-- NAVBAR -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🛡️</span>
+        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard</span>
       </div>
-      <div id="txList">Cargando datos...</div>
+      <div id="nav-actions" class="flex gap-3">
+        <button onclick="showAuthModal('login')" class="px-4 py-2 text-sm font-medium hover:text-emerald-400 transition">Iniciar Sesión</button>
+        <button onclick="showAuthModal('register')" class="px-4 py-2 text-sm font-medium bg-emerald-500 hover:bg-emerald-600 rounded-lg text-slate-950 font-semibold transition">Registrarse</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LANDING PAGE -->
+  <main id="landing-view" class="max-w-6xl mx-auto px-4 py-16 flex-grow flex flex-col justify-center items-center text-center">
+    <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full border border-emerald-500/20 mb-6">Plataforma Segura 100% Automatizada</span>
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6">
+      Transacciones sin riesgos entre <br class="hidden sm:inline"/> Compradores y Vendedores
+    </h1>
+    <p class="text-slate-400 text-lg max-w-2xl mb-8">
+      Retenemos los fondos de forma segura hasta que ambas partes confirmen la entrega del producto o servicio.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+      <button onclick="showAuthModal('register')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition">
+        Comenzar Ahora Gratis
+      </button>
+      <button onclick="showAuthModal('login')" class="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
+        Ingresar a mi Cuenta
+      </button>
     </div>
 
-    <!-- DISPUTAS -->
-    <div class="card">
-      <h3 style="color:#f59e0b;">⚖️ Centro de Disputas</h3>
-      <div id="disputeList">Cargando disputas...</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 text-left w-full">
+      <div class="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
+        <div class="text-3xl mb-3">🔒</div>
+        <h3 class="text-lg font-bold mb-2">Fondos Protegidos</h3>
+        <p class="text-slate-400 text-sm">El dinero queda resguardado hasta la entrega del producto.</p>
+      </div>
+      <div class="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
+        <div class="text-3xl mb-3">⚖️</div>
+        <h3 class="text-lg font-bold mb-2">Gestión de Disputas</h3>
+        <p class="text-slate-400 text-sm">Sistema de mediación transparente para resolver diferencias.</p>
+      </div>
+      <div class="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
+        <div class="text-3xl mb-3">⚡</div>
+        <h3 class="text-lg font-bold mb-2">Pagos Inmediatos</h3>
+        <p class="text-slate-400 text-sm">Liberación de fondos instantánea tras la conformidad.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- DASHBOARD -->
+  <main id="dashboard-view" class="hidden max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+    <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
+      <div>
+        <h2 class="text-2xl font-bold">Panel de Control</h2>
+        <p id="user-email-display" class="text-slate-400 text-sm">Cargando usuario...</p>
+      </div>
+      <button onclick="handleLogout()" class="px-4 py-2 text-sm bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition">
+        Cerrar Sesión
+      </button>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-8">
+      <h3 class="text-lg font-bold mb-4 text-emerald-400">Crear Nueva Orden</h3>
+      <form id="order-form" class="space-y-4">
+        <input type="text" id="buyerId" placeholder="ID Comprador" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500" required />
+        <input type="text" id="sellerId" placeholder="ID Vendedor" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500" required />
+        <input type="number" id="amount" placeholder="Monto ($)" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500" required />
+        <input type="text" id="description" placeholder="Descripción de la orden" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500" required />
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Crear Transacción</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- MODAL AUTH -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
+      <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
+      
+      <h3 id="modal-title" class="text-xl font-bold mb-2 text-center">Iniciar Sesión</h3>
+      <p id="modal-subtitle" class="text-xs text-slate-400 text-center mb-6">Ingresá tus credenciales para continuar</p>
+
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Correo Electrónico</label>
+          <input type="email" id="auth-email" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm focus:border-emerald-500 focus:outline-none" placeholder="tu@email.com" required />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Contraseña</label>
+          <input type="password" id="auth-password" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm focus:border-emerald-500 focus:outline-none" placeholder="••••••••" required />
+        </div>
+        
+        <div id="auth-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded text-center"></div>
+        <div id="auth-success" class="hidden text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded text-center"></div>
+
+        <button type="submit" id="auth-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">
+          Continuar
+        </button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <button id="toggle-auth-mode" onclick="toggleAuthMode()" class="text-xs text-slate-400 hover:text-emerald-400 underline">
+          ¿No tenés cuenta? Registrate
+        </button>
+      </div>
     </div>
   </div>
 
+  <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+    © 2026 EscrowGuard. Todos los derechos reservados.
+  </footer>
+
   <script>
-    let rawTransactions = [];
-    let currentFilter = 'all';
+    const SUPABASE_URL = "${SUPABASE_URL}";
+    const SUPABASE_KEY = "${SUPABASE_KEY}";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    function calcFee() {
-      const val = parseFloat(document.getElementById('amount').value);
-      const box = document.getElementById('feeBox');
-      if (isNaN(val) || val <= 0) {
-        box.innerHTML = 'Plataforma retiene 3% de comisión.';
-        return;
-      }
-      const fee = (val * 0.03).toFixed(2);
-      const net = (val - fee).toFixed(2);
-      box.innerHTML = 'Monto total: <strong>$' + val + '</strong> | Comisión (3%): <span style="color:#f59e0b;">$' + fee + '</span> | Neto a vendedor: <span style="color:#10b981;">$' + net + '</span>';
-    }
+    let currentAuthMode = 'login';
 
-    async function loadAll() {
-      await Promise.all([loadTx(), loadDisputes()]);
-    }
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      updateUI(session);
 
-    async function loadTx() {
-      const el = document.getElementById('txList');
-      try {
-        const r = await fetch('/api/escrow/all');
-        const d = await r.json();
-        
-        if (!r.ok || d.error) {
-          el.innerHTML = '<div class="error-box">⚠️ Error de Base de Datos: ' + (d.error || 'No se pudo conectar') + '</div>';
-          return;
-        }
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        updateUI(session);
+      });
+    });
 
-        rawTransactions = d.transactions || [];
-        filterTx();
-      } catch(e) {
-        el.innerHTML = '<div class="error-box">⚠️ Error de red al consultar el servidor.</div>';
+    function updateUI(session) {
+      const landing = document.getElementById('landing-view');
+      const dashboard = document.getElementById('dashboard-view');
+      const navActions = document.getElementById('nav-actions');
+
+      if (session) {
+        landing.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        document.getElementById('user-email-display').innerText = \`Sesión iniciada como: \${session.user.email}\`;
+        navActions.classList.add('hidden');
+      } else {
+        landing.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+        navActions.classList.remove('hidden');
       }
     }
 
-    function setFilter(filter) {
-      currentFilter = filter;
-      filterTx();
-    }
+    function showAuthModal(mode) {
+      currentAuthMode = mode;
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-error').classList.add('hidden');
+      document.getElementById('auth-success').classList.add('hidden');
 
-    function filterTx() {
-      const el = document.getElementById('txList');
-      const search = (document.getElementById('searchInput').value || '').toLowerCase();
-
-      let list = rawTransactions.filter(t => {
-        const matchesStatus = currentFilter === 'all' || t.status === currentFilter;
-        const matchesSearch = (t.description || '').toLowerCase().includes(search) || 
-                              (t.buyer_id || '').toLowerCase().includes(search) || 
-                              (t.seller_id || '').toLowerCase().includes(search) ||
-                              (t.id || '').toLowerCase().includes(search);
-        return matchesStatus && matchesSearch;
-      });
-
-      if (!list.length) {
-        el.innerHTML = '<p style="color:#64748b; font-size:12px;">No hay transacciones que coincidan.</p>';
-        return;
-      }
-
-      el.innerHTML = list.map(t => {
-        let badgeClass = 'badge-' + t.status;
-        let btns = '';
-
-        if (t.status === 'pending') {
-          btns += '<button class="btn-sm btn-blue" onclick="pay(\\\'' + t.id + '\\\')">Simular Pago</button>';
-        }
-        if (t.status === 'funded') {
-          btns += '<button class="btn-sm" onclick="complete(\\\'' + t.id + '\\\')">Liberar Fondos</button>';
-          btns += '<button class="btn-sm btn-red" onclick="dispute(\\\'' + t.id + '\\\', \\\'' + t.buyer_id + '\\\')">Reclamar</button>';
-        }
-
-        const fee = (t.amount * 0.03).toFixed(2);
-        const net = (t.amount - fee).toFixed(2);
-
-        return '<div class="item flex">' +
-          '<div>' +
-            '<span class="badge ' + badgeClass + '">' + t.status + '</span> ' +
-            '<small style="color:#64748b;">ID: ' + t.id.substring(0,8) + '...</small><br>' +
-            '<strong style="font-size:14px; color:#f1f5f9;">' + (t.description || 'Sin descripción') + '</strong><br>' +
-            '<span style="color:#10b981; font-weight:bold;">$' + t.amount + '</span> ' +
-            '<small style="color:#94a3b8;">(Neto vendedor: $' + net + ')</small><br>' +
-            '<small style="color:#64748b;">Comprador: ' + t.buyer_id + ' | Vendedor: ' + t.seller_id + '</small>' +
-          '</div>' +
-          '<div class="flex-wrap">' + btns + '</div>' +
-        '</div>';
-      }).join('');
-    }
-
-    async function loadDisputes() {
-      const el = document.getElementById('disputeList');
-      try {
-        const r = await fetch('/api/escrow/disputes/all');
-        const d = await r.json();
-
-        if (!r.ok || d.error) {
-          el.innerHTML = '<div class="error-box">⚠️ ' + (d.error || 'Error al obtener disputas') + '</div>';
-          return;
-        }
-
-        if (!d.disputes || !d.disputes.length) {
-          el.innerHTML = '<p style="color:#64748b; font-size:12px;">Sin disputas abiertas.</p>';
-          return;
-        }
-
-        el.innerHTML = d.disputes.map(dp => {
-          let btns = '';
-          if (dp.status === 'open') {
-            btns = '<button class="btn-sm btn-red" onclick="resolve(\\\'' + dp.id + '\\\', \\\'' + dp.transaction_id + '\\\', \\\'buyer\\\')">Reembolsar Comprador</button>' +
-                   '<button class="btn-sm" onclick="resolve(\\\'' + dp.id + '\\\', \\\'' + dp.transaction_id + '\\\', \\\'seller\\\')">Pagar Vendedor</button>';
-          } else {
-            btns = '<span style="color:#10b981; font-size:11px; font-weight:bold;">Resuelto a favor de: ' + dp.winner_role + '</span>';
-          }
-          return '<div class="item flex">' +
-            '<div>' +
-              '<strong style="color:#f59e0b;">' + dp.reason + '</strong><br>' +
-              '<small style="color:#64748b;">Iniciado por: ' + dp.opened_by + '</small>' +
-            '</div>' +
-            '<div>' + btns + '</div>' +
-          '</div>';
-        }).join('');
-      } catch(e) {
-        el.innerHTML = '<div class="error-box">⚠️ Error al cargar la lista de disputas.</div>';
+      if (mode === 'login') {
+        document.getElementById('modal-title').innerText = 'Iniciar Sesión';
+        document.getElementById('modal-subtitle').innerText = 'Ingresá a tu cuenta de EscrowGuard';
+        document.getElementById('auth-btn').innerText = 'Entrar';
+        document.getElementById('toggle-auth-mode').innerText = '¿No tenés cuenta? Registrate';
+      } else {
+        document.getElementById('modal-title').innerText = 'Crear Cuenta';
+        document.getElementById('modal-subtitle').innerText = 'Registrate gratis en pocos segundos';
+        document.getElementById('auth-btn').innerText = 'Registrarme';
+        document.getElementById('toggle-auth-mode').innerText = '¿Ya tenés cuenta? Iniciá sesión';
       }
     }
 
-    async function createTx() {
-      const b = document.getElementById('buyer').value;
-      const s = document.getElementById('seller').value;
-      const a = document.getElementById('amount').value;
-      const d = document.getElementById('desc').value;
-      if (!b || !s || !a) return alert('Completar Comprador, Vendedor y Monto');
-      
-      const r = await fetch('/api/escrow/create', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ buyer_id: b, seller_id: s, amount: a, description: d })
-      });
-      const res = await r.json();
-      if (!r.ok || res.error) {
-        alert('Error al crear: ' + (res.error || 'Desconocido'));
-        return;
+    function hideAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function toggleAuthMode() {
+      showAuthModal(currentAuthMode === 'login' ? 'register' : 'login');
+    }
+
+    async function handleAuthSubmit(event) {
+      event.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const errorDiv = document.getElementById('auth-error');
+      const successDiv = document.getElementById('auth-success');
+
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+
+      if (currentAuthMode === 'login') {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorDiv.innerText = error.message;
+          errorDiv.classList.remove('hidden');
+        } else {
+          hideAuthModal();
+        }
+      } else {
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) {
+          errorDiv.innerText = error.message;
+          errorDiv.classList.remove('hidden');
+        } else {
+          successDiv.innerText = "¡Registro exitoso! Revisa tu email para confirmar o inicia sesión.";
+          successDiv.classList.remove('hidden');
+        }
       }
-
-      document.getElementById('buyer').value = '';
-      document.getElementById('seller').value = '';
-      document.getElementById('amount').value = '';
-      document.getElementById('desc').value = '';
-      document.getElementById('feeBox').innerHTML = 'Plataforma retiene 3% de comisión.';
-      loadAll();
     }
 
-    async function pay(id) {
-      await fetch('/api/webhooks/payment', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ transaction_id: id, payment_status: 'approved', payment_id: 'PAY_' + Date.now() })
-      });
-      loadAll();
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
     }
-
-    async function complete(id) {
-      await fetch('/api/escrow/status', {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ transaction_id: id, status: 'completed' })
-      });
-      loadAll();
-    }
-
-    async function dispute(id, buyerId) {
-      const reason = prompt('Motivo del reclamo:');
-      if (!reason) return;
-      await fetch('/api/escrow/dispute/open', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ transaction_id: id, opened_by: buyerId, reason: reason })
-      });
-      loadAll();
-    }
-
-    async function resolve(disputeId, txId, winner) {
-      await fetch('/api/escrow/dispute/resolve', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ dispute_id: disputeId, transaction_id: txId, winner_role: winner, resolution_notes: 'Resuelto por administrador' })
-      });
-      loadAll();
-    }
-
-    loadAll();
   </script>
 </body>
 </html>
   `);
 });
 
-// =============================================================================
-// API ENDPOINTS
-// =============================================================================
-
-app.get('/api/escrow/all', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas en Vercel.' });
-    const { data, error } = await supabase.from('escrow_transactions').select('*').order('created_at', { ascending: false });
-    if (error) return res.status(400).json({ error: error.message });
-    return res.status(200).json({ status: 'OK', transactions: data || [] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.post('/api/escrow/create', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas en Vercel.' });
-    const { buyer_id, seller_id, amount, description } = req.body;
-    if (!buyer_id || !seller_id || !amount) return res.status(400).json({ error: 'Comprador, vendedor y monto son obligatorios.' });
-    
-    const { data, error } = await supabase
-      .from('escrow_transactions')
-      .insert([{ buyer_id, seller_id, amount: Number(amount), description, status: 'pending' }])
-      .select();
-      
-    if (error) return res.status(400).json({ error: error.message });
-    await logEvent(supabase, data[0].id, 'TRANSACTION_CREATED', { buyer_id, seller_id, amount });
-    return res.status(201).json({ status: 'Creado', transaction: data[0] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.patch('/api/escrow/status', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas.' });
-    const { transaction_id, status } = req.body;
-    const { data, error } = await supabase.from('escrow_transactions').update({ status }).eq('id', transaction_id).select();
-    if (error) return res.status(400).json({ error: error.message });
-    await logEvent(supabase, transaction_id, 'STATUS_UPDATED', { new_status: status });
-    return res.status(200).json({ status: 'Actualizado', transaction: data[0] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.post('/api/webhooks/payment', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas.' });
-    const { transaction_id, payment_status, payment_id } = req.body;
-    if (['approved', 'completed', 'paid'].includes((payment_status || '').toLowerCase())) {
-      const { data, error } = await supabase
-        .from('escrow_transactions')
-        .update({ status: 'funded', payment_id: payment_id || null })
-        .eq('id', transaction_id)
-        .select();
-      if (error) return res.status(400).json({ error: error.message });
-      await logEvent(supabase, transaction_id, 'PAYMENT_RECEIVED', { payment_id });
-      return res.status(200).json({ status: 'OK', transaction: data[0] });
-    }
-    return res.status(200).json({ status: 'Ignorado' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.post('/api/escrow/dispute/open', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas.' });
-    const { transaction_id, opened_by, reason } = req.body;
-    const { data: tx, error: txError } = await supabase.from('escrow_transactions').update({ status: 'disputed' }).eq('id', transaction_id).select();
-    if (txError) return res.status(400).json({ error: txError.message });
-    const { data: dispute, error: disputeError } = await supabase.from('escrow_disputes').insert([{ transaction_id, opened_by, reason, status: 'open' }]).select();
-    if (disputeError) return res.status(400).json({ error: disputeError.message });
-    await logEvent(supabase, transaction_id, 'DISPUTE_OPENED', { opened_by, reason });
-    return res.status(201).json({ status: 'Disputa Abierta', transaction: tx[0], dispute: dispute[0] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.get('/api/escrow/disputes/all', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas.' });
-    const { data, error } = await supabase.from('escrow_disputes').select('*').order('created_at', { ascending: false });
-    if (error) return res.status(400).json({ error: error.message });
-    return res.status(200).json({ status: 'OK', disputes: data || [] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-app.post('/api/escrow/dispute/resolve', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Variables SUPABASE_URL o SUPABASE_KEY no configuradas.' });
-    const { dispute_id, transaction_id, winner_role, resolution_notes } = req.body;
-    const finalStatus = winner_role === 'buyer' ? 'cancelled' : 'completed';
-    const { data: tx, error: txError } = await supabase.from('escrow_transactions').update({ status: finalStatus }).eq('id', transaction_id).select();
-    if (txError) return res.status(400).json({ error: txError.message });
-    const { data: dispute, error: disputeError } = await supabase.from('escrow_disputes').update({ status: 'resolved', winner_role, resolution_notes: resolution_notes || '', resolved_at: new Date().toISOString() }).eq('id', dispute_id).select();
-    if (disputeError) return res.status(400).json({ error: disputeError.message });
-    await logEvent(supabase, transaction_id, 'DISPUTE_RESOLVED', { winner_role, resolution_notes });
-    return res.status(200).json({ status: 'Disputa Resuelta', transaction: tx[0], dispute: dispute[0] });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || String(err) });
-  }
-});
-
-export default app;
-  
+module.exports = app;
