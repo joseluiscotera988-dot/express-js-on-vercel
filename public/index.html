@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <!-- BANNER CBU MAESTRO Y COMISIÓN SECRETA (ACCESIBLE SOLO EN MODO ROOT) -->
+  <!-- BANNER CBU MAESTRO Y COMISIÓN SECRETA -->
   <div id="admin-top-banner" class="hidden bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-b border-amber-500/30 px-4 py-2 text-xs">
     <div class="max-w-md mx-auto flex justify-between items-center text-amber-300">
       <div class="flex items-center gap-2">
@@ -49,7 +49,8 @@
   </div>
 
   <main class="max-w-md mx-auto p-4 space-y-5">
-        <!-- VISTA 1: HOME & HUB PRINCIPAL -->
+
+    <!-- VISTA 1: HOME & HUB PRINCIPAL -->
     <div id="view-home" class="space-y-5">
       
       <!-- BANNER MONETIZADO / PUBLICIDAD -->
@@ -127,7 +128,7 @@
         </button>
       </section>
 
-      <!-- FEED LIVE DE SUBASTAS Y TRANSACCIONES EN TIEMPO REAL -->
+      <!-- FEED LIVE DE SUBASTAS EN TIEMPO REAL -->
       <section class="glass-card p-4 rounded-2xl space-y-3">
         <div class="flex justify-between items-center">
           <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -135,13 +136,12 @@
           </h2>
           <span class="text-[10px] text-amber-400 font-mono">EN VIVO</span>
         </div>
-        <div id="live-auction-feed" class="space-y-2">
-          <!-- Carga dinámica vía JS -->
-        </div>
+        <div id="live-auction-feed" class="space-y-2"></div>
       </section>
 
-  </div>
-                  <!-- VISTA 2: SUBASTAS Y FLETES -->
+    </div>
+
+    <!-- VISTA 2: SUBASTAS Y FLETES -->
     <div id="view-fletes" class="hidden space-y-5">
       <section class="glass-card p-5 rounded-2xl space-y-4">
         <div class="flex items-center gap-3">
@@ -183,12 +183,9 @@
         </form>
       </section>
 
-      <!-- LISTA DE FLETES EN CURSO -->
       <section class="glass-card p-4 rounded-2xl space-y-3">
         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Licitaciones Activas en la Zona</h3>
-        <div id="active-fletes-list" class="space-y-2">
-          <!-- Carga via JS -->
-        </div>
+        <div id="active-fletes-list" class="space-y-2"></div>
       </section>
     </div>
 
@@ -212,18 +209,16 @@
         </div>
       </section>
 
-      <!-- HISTORIAL DE DESCUENTOS Y REDIRECCIÓN SECRETA -->
       <section class="glass-card p-4 rounded-2xl space-y-3">
         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center">
           <span>Últimos Movimientos</span>
           <span class="text-[10px] text-emerald-400">Escrow Protegido</span>
         </h3>
-        <div id="wallet-transactions" class="space-y-2 text-xs">
-          <!-- Carga via JS -->
-        </div>
+        <div id="wallet-transactions" class="space-y-2 text-xs"></div>
       </section>
-  </div>
-                <!-- VISTA 4: SIMULADOR DEL MOTOR FINANCIERO Y CBU SECRETO -->
+    </div>
+
+    <!-- VISTA 4: SIMULADOR FINANCIERO CBU -->
     <div id="view-simulador" class="hidden space-y-5">
       <section class="glass-card p-5 rounded-2xl border-emerald-500/30 space-y-4">
         <div class="flex items-center gap-3">
@@ -253,21 +248,19 @@
 
         <form onsubmit="runFinancialSimulation(event)" class="space-y-3">
           <div>
-            <label class="text-xs text-slate-400 font-semibold">Monto de Transacción de Flete ($)</label>
+            <label class="text-xs text-slate-400 font-semibold">Monto de Transacción ($)</label>
             <input id="sim-monto" type="number" value="100000" class="w-full mt-1 p-3 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-slate-100 outline-none focus:border-emerald-400" required />
           </div>
           <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-2">
-            <i class="fa-solid fa-play"></i> Procesar Simulación de Pago
+            <i class="fa-solid fa-play"></i> Procesar Simulación
           </button>
         </form>
 
-        <div id="sim-result" class="hidden space-y-2 p-4 bg-slate-950 rounded-xl border border-amber-500/30 text-xs">
-          <!-- Resultado dinámico -->
-        </div>
+        <div id="sim-result" class="hidden space-y-2 p-4 bg-slate-950 rounded-xl border border-amber-500/30 text-xs"></div>
       </section>
     </div>
 
-    <!-- VISTA 5: PERFIL KYC Y MODO ADMIN ROOT -->
+    <!-- VISTA 5: PERFIL Y MODO ADMIN ROOT -->
     <div id="view-profile" class="hidden space-y-5">
       <section class="glass-card p-5 rounded-2xl text-center space-y-4">
         <div id="profile-avatar" class="w-16 h-16 gold-gradient text-slate-950 font-black rounded-2xl flex items-center justify-center text-xl mx-auto shadow-xl">
@@ -364,13 +357,13 @@
     </div>
   </nav>
 
-  <!-- LÓGICA INTERACTIVA COMPLETA -->
+  <!-- LÓGICA INTERACTIVA CONECTADA A LA API REAL -->
   <script>
     let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
 
     const mockFletes = [
-      { id: 101, origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
-      { id: 102, origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
+      { id: 'auc_101', origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
+      { id: 'auc_102', origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
     ];
 
     const mockTransactions = [
@@ -439,18 +432,42 @@
       document.getElementById('auth-modal').classList.add('hidden');
     }
 
-    function handleRegister(e) {
+    // PETICIÓN HTTP REAL AL BACKEND PARA REGISTRO KYC
+    async function handleRegister(e) {
       e.preventDefault();
       const name = document.getElementById('reg-name').value;
       const phone = document.getElementById('reg-phone').value;
       const role = document.getElementById('reg-role').value;
 
-      currentUser = { name, phone, role, verified: true };
-      localStorage.setItem('pm_user', JSON.stringify(currentUser));
+      try {
+        const response = await fetch('/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: name, phone: phone, role: role })
+        });
 
-      updateAuthUI();
-      closeAuthModal();
-      alert('🎉 Identidad verificada con éxito. Sesión iniciada.');
+        const data = await response.json();
+
+        if (data.success) {
+          currentUser = { 
+            id: data.user.id,
+            name: data.user.fullName, 
+            phone: data.user.phone, 
+            role: data.user.role, 
+            verified: data.user.isVerified 
+          };
+          localStorage.setItem('pm_user', JSON.stringify(currentUser));
+
+          updateAuthUI();
+          closeAuthModal();
+          alert('🎉 Identidad verificada y registrada en el servidor Backend.\nID asignado: ' + data.user.id);
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error al conectar con la API:', error);
+        alert('❌ No se pudo conectar con el servidor.');
+      }
     }
 
     function logout() {
@@ -479,7 +496,7 @@
             </div>
             <div>
               <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
-              <p class="text-[10px] text-slate-400">${f.carga} • Oferta: <span class="text-emerald-400 font-bold">$ ${f.monto.toLocaleString()}</span></p>
+              <p class="text-[10px] text-slate-400">${f.carga} • Oferta: <span class="text-emerald-400 font-bold">$ ${Number(f.monto).toLocaleString()}</span></p>
             </div>
           </div>
           <button onclick="protectedAction('fletes')" class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2.5 py-1 rounded-lg border border-amber-500/30">
@@ -505,24 +522,53 @@
       }
     }
 
-    function handleCreateAuction(e) {
+    // PETICIÓN HTTP REAL AL BACKEND PARA CREAR SUBASTAS CON RETENCIÓN DEL 5%
+    async function handleCreateAuction(e) {
       e.preventDefault();
       const origen = document.getElementById('flete-origen').value;
       const destino = document.getElementById('flete-destino').value;
-      const monto = parseInt(document.getElementById('flete-monto').value);
+      const vehiculo = document.getElementById('flete-vehiculo').value;
+      const monto = document.getElementById('flete-monto').value;
 
-      mockFletes.unshift({
-        id: Date.now(),
-        origen,
-        destino,
-        carga: document.getElementById('flete-vehiculo').value,
-        monto,
-        estado: 'Licitando'
-      });
+      try {
+        const response = await fetch('/api/auctions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origin: origen,
+            destination: destino,
+            vehicleType: vehiculo,
+            amount: monto,
+            userId: currentUser ? currentUser.id : 'usr_anon'
+          })
+        });
 
-      renderFeed();
-      alert('🚀 Licitación publicada. Retención del 5% programada para el cierre.');
-      switchView('home');
+        const data = await response.json();
+
+        if (data.success) {
+          mockFletes.unshift({
+            id: data.auction.id,
+            origen: data.auction.origin,
+            destino: data.auction.destination,
+            carga: data.auction.vehicleType,
+            monto: data.auction.totalAmount,
+            estado: 'Licitando'
+          });
+
+          renderFeed();
+          alert('🚀 Subasta procesada en servidor Node.js Real:\n' +
+                'Monto Total: $' + data.auction.totalAmount.toLocaleString() + '\n' +
+                'Comisión 5% asignada: $' + data.auction.masterFee_5pct.toLocaleString() + '\n' +
+                'Pago Prestador (95%): $' + data.auction.carrierPayout_95pct.toLocaleString() + '\n' +
+                'CBU Ruteo Destino: ' + data.auction.destinationCBU);
+          switchView('home');
+        } else {
+          alert('❌ Error servidor: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error al crear subasta en API:', error);
+        alert('❌ Error de conexión con la API de subastas.');
+      }
     }
 
     function runFinancialSimulation(e) {
@@ -552,5 +598,5 @@
     });
   </script>
 </body>
-  </html>
-  
+            </html>
+      
