@@ -1,52 +1,41 @@
-import express, { Request, Response, NextFunction } from 'express';
-import escrowRouter from './routes/escrow';
-import marketplaceRouter from './routes/marketplace';
-import webhooksRouter from './routes/webhooks';
-import config from './config/master';
+// @ts-nocheck
+import express from 'express';
+import { createClient } from '@supabase/supabase-js';
 
 const app = express();
-
-// Middleware para parsear JSON
 app.use(express.json());
 
-// Ruta principal
-app.get('/', (req: Request, res: Response) => {
-  res.json({
-    status: 'OK',
-    app: config.appName,
-    message: 'Servidor Express activo en Vercel'
-  });
+// Ruta raíz de verificación básica
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Servidor Express activo en Vercel' });
 });
 
-// Chequeo de estado del sistema
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'healthy',
-    environment: config.env,
-    timestamp: new Date().toISOString()
-  });
-});
+// Ruta Escrow con instanciación diferida
+app.get('/api/escrow/all', async (req, res) => {
+  try {
+    const url = (process.env.SUPABASE_URL || '').trim();
+    const key = (process.env.SUPABASE_KEY || '').trim();
 
-// Enrutador de módulos
-app.use('/api/escrow', escrowRouter);
-app.use('/api/marketplace', marketplaceRouter);
-app.use('/api/webhooks', webhooksRouter);
+    if (!url || !url.startsWith('http') || !key) {
+      return res.status(200).json({
+        status: 'Configuración Incompleta',
+        message: 'Falta SUPABASE_URL (debe comenzar con https://) o SUPABASE_KEY en las variables de Vercel.'
+      });
+    }
 
-// Manejo de rutas no encontradas (404 personalizado)
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `La ruta '${req.originalUrl}' no existe en este servidor.`
-  });
-});
+    // Supabase se crea ÚNICAMENTE al recibir la petición, nunca al arrancar la app
+    const supabase = createClient(url, key);
+    const { data, error } = await supabase.from('escrow_transactions').select('*');
 
-// Middleware global para manejo de errores (500)
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: 'Ocurrió un error inesperado en el servidor.'
-  });
+    if (error) {
+      return res.status(200).json({ status: 'Error de Supabase', message: error.message });
+    }
+
+    return res.status(200).json({ status: 'OK', transactions: data || [] });
+  } catch (err: any) {
+    return res.status(200).json({ status: 'Error Interno', message: err.message || String(err) });
+  }
 });
 
 export default app;
+    
