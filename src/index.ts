@@ -7,10 +7,12 @@ app.use(express.json());
 // CONFIGURACIÓN CENTRAL DE LA CUENTA MAESTRA & MERCADO PAGO
 const MASTER_CONFIG = {
   cbu: '0000003100077621570425',
-  commissionRate: 0.05, // 5% de retención automática
-  // Reemplazar con tu Access Token de producción o prueba de Mercado Pago
+  commissionRate: 0.05,
   mpAccessToken: process.env.MP_ACCESS_TOKEN || 'TEST-0000000000000000-000000-00000000000000000000000000000000-000000000'
 };
+
+// ALMACENAMIENTO DE POSICIONES GPS EN TIEMPO REAL
+const activeTrackingLocations: Record<string, { lat: number; lng: number; updatedAt: Date; carrierId: string }> = {};
 
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
@@ -20,6 +22,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ONLINE',
     ecosistema: 'Pase Y Mire (P&M)',
+    gps_tracking: 'ENABLED',
     payments_gateway: 'Mercado Pago Ready',
     master_cbu_configured: true,
     timestamp: new Date()
@@ -95,11 +98,10 @@ app.post('/api/payments/create-preference', async (req: Request, res: Response) 
     return res.status(400).json({ success: false, error: 'Monto no válido' });
   }
 
-  const masterFee = total * MASTER_CONFIG.commissionRate; // 5%
-  const carrierPayout = total - masterFee;                 // 95%
+  const masterFee = total * MASTER_CONFIG.commissionRate;
+  const carrierPayout = total - masterFee;
 
   try {
-    // Estructura de preferencia para Mercado Pago API
     const preferenceData = {
       items: [
         {
@@ -127,7 +129,6 @@ app.post('/api/payments/create-preference', async (req: Request, res: Response) 
       auto_return: 'approved'
     };
 
-    // Llamada directa a la API v1 de Mercado Pago
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -142,7 +143,7 @@ app.post('/api/payments/create-preference', async (req: Request, res: Response) 
     if (data.init_point) {
       res.json({
         success: true,
-        init_point: data.init_point, // URL oficial de cobro de Mercado Pago
+        init_point: data.init_point,
         preference_id: data.id,
         split: {
           totalAmount: total,
@@ -160,17 +161,54 @@ app.post('/api/payments/create-preference', async (req: Request, res: Response) 
   }
 });
 
-// ENDPOINT 5: WEBHOOK DE MERCADO PAGO (NOTIFICACIÓN DE COBRO APROBADO)
+// ENDPOINT 5: WEBHOOK DE MERCADO PAGO
 app.post('/api/payments/webhook', (req: Request, res: Response) => {
   const { type, data } = req.body;
 
   if (type === 'payment') {
     const paymentId = data.id;
     console.log(`⚡ ¡PAGO APROBADO EN MERCADO PAGO! ID: ${paymentId}`);
-    // Aquí el servidor retiene automáticamente el 5% para tu CBU y acredita el 95% al transportista
   }
 
   res.status(200).send('OK');
+});
+
+// ENDPOINT 6: ACTUALIZAR UBICACIÓN GPS DEL TRANSPORTISTA EN TIEMPO REAL
+app.post('/api/gps/update', (req: Request, res: Response) => {
+  const { auctionId, carrierId, lat, lng } = req.body;
+
+  if (!auctionId || lat === undefined || lng === undefined) {
+    return res.status(400).json({ success: false, error: 'Subasta, Latitud y Longitud son requeridas' });
+  }
+
+  activeTrackingLocations[auctionId] = {
+    lat: Number(lat),
+    lng: Number(lng),
+    carrierId: carrierId || 'flete_anon',
+    updatedAt: new Date()
+  };
+
+  res.json({
+    success: true,
+    message: 'Coordenadas GPS actualizadas en tiempo real',
+    location: activeTrackingLocations[auctionId]
+  });
+});
+
+// ENDPOINT 7: CONSULTAR UBICACIÓN GPS DEL FLETE
+app.get('/api/gps/track/:auctionId', (req: Request, res: Response) => {
+  const { auctionId } = req.params;
+  const location = activeTrackingLocations[auctionId];
+
+  if (!location) {
+    return res.status(404).json({ success: false, error: 'El transportista aún no inició la transmisión GPS.' });
+  }
+
+  res.json({
+    success: true,
+    auctionId,
+    location
+  });
 });
 
 // RUTA SPA PRINCIPAL
@@ -179,4 +217,4 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 export default app;
-  
+                                               
