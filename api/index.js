@@ -1,6 +1,4 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
@@ -137,22 +135,5 @@ app.post('/api/admin/kyc-status', async (req, res) => {
   res.json({ success: true });
 });
 
-// 6. SERVIR INTERFAZ PRINCIPAL PASE Y MIRE
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    try {
-      const htmlPath = path.join(process.cwd(), 'index.html');
-      if (fs.existsSync(htmlPath)) {
-        const html = fs.readFileSync(htmlPath, 'utf8');
-        res.setHeader('Content-Type', 'text/html');
-        return res.send(html);
-      }
-    } catch (e) {
-      return res.status(500).send("Error al cargar la interfaz de Pase Y Mire.");
-    }
-  }
-  res.status(404).json({ error: 'Ruta no encontrada' });
-});
-
 module.exports = app;
-                              
+        
