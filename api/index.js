@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const app = express();
 app.use(express.json());
 
-// Helper para instanciación diferida (evita colapsos de Vercel al arrancar)
+// Instanciación diferida de Supabase (blindada contra fallos de arranque en Vercel)
 const getSupabase = () => {
   const url = (process.env.SUPABASE_URL || '').trim();
   const key = (process.env.SUPABASE_KEY || '').trim();
@@ -13,32 +13,29 @@ const getSupabase = () => {
   return createClient(url, key);
 };
 
-// Middleware para validación básica de API Key en headers (opcional)
-const verifyApiKey = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'];
-  const expectedKey = process.env.API_SECRET_KEY;
-  if (expectedKey && apiKey !== expectedKey) {
-    return res.status(401).json({ error: 'No autorizado: API Key inválida o ausente' });
+// Función auxiliar para registrar auditoría de cada operación
+const logEvent = async (supabase: any, transaction_id: string, event: string, details: any = {}) => {
+  try {
+    await supabase.from('escrow_logs').insert([{ transaction_id, event, details }]);
+  } catch (e) {
+    console.error('Error al registrar log:', e);
   }
-  next();
 };
 
-// -----------------------------------------------------------------------------
-// 1. SALUD Y ESTADO DEL SERVIDOR
-// -----------------------------------------------------------------------------
+// =============================================================================
+// RUTAS DEL SISTEMA
+// =============================================================================
+
+// 1. Estado del Servidor
 app.get('/', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Servidor Express + Escrow activo en Vercel' });
+  res.status(200).json({ status: 'OK', message: 'Servidor Express Escrow v1.0 Activo' });
 });
 
-// -----------------------------------------------------------------------------
-// 2. TRANSACCIONES ESCROW (CRUD & ESTADOS)
-// -----------------------------------------------------------------------------
-
-// Listar todas las transacciones
+// 2. Obtener todas las transacciones
 app.get('/api/escrow/all', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta en Vercel' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas en Vercel' });
 
     const { data, error } = await supabase.from('escrow_transactions').select('*').order('created_at', { ascending: false });
     if (error) return res.status(400).json({ error: error.message });
@@ -49,11 +46,11 @@ app.get('/api/escrow/all', async (req, res) => {
   }
 });
 
-// Obtener una transacción por ID
+// 3. Obtener transacción por ID
 app.get('/api/escrow/:id', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { id } = req.params;
     const { data, error } = await supabase.from('escrow_transactions').select('*').eq('id', id).single();
@@ -65,110 +62,109 @@ app.get('/api/escrow/:id', async (req, res) => {
   }
 });
 
-// Crear una nueva orden de Escrow
+// 4. Crear nueva orden de Escrow
 app.post('/api/escrow/create', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { buyer_id, seller_id, amount, description } = req.body;
 
     if (!buyer_id || !seller_id || !amount) {
-      return res.status(400).json({ error: 'Parámetros obligatorios faltantes: buyer_id, seller_id, amount' });
+      return res.status(400).json({ error: 'Faltan parámetros obligatorios: buyer_id, seller_id, amount' });
     }
 
     const { data, error } = await supabase
       .from('escrow_transactions')
-      .insert([{ buyer_id, seller_id, amount, description, status: 'pending' }])
+      .insert([{ buyer_id, seller_id, amount: Number(amount), description, status: 'pending' }])
       .select();
 
     if (error) return res.status(400).json({ error: error.message });
+
+    await logEvent(supabase, data[0].id, 'TRANSACTION_CREATED', { buyer_id, seller_id, amount });
+
     return res.status(201).json({ status: 'Creado', transaction: data[0] });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
-// Cambiar estado manualmente (Liberar / Cancelar)
+// 5. Cambiar estado manualmente (Liberar / Cancelar)
 app.patch('/api/escrow/status', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { transaction_id, status } = req.body;
     const validStatuses = ['pending', 'funded', 'completed', 'disputed', 'cancelled'];
 
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: `Estado inválido. Debe ser uno de: ${validStatuses.join(', ')}` });
+      return res.status(400).json({ error: `Estado inválido. Opciones válidas: ${validStatuses.join(', ')}` });
     }
 
     const { data, error } = await supabase
       .from('escrow_transactions')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq('id', transaction_id)
       .select();
 
     if (error) return res.status(400).json({ error: error.message });
+
+    await logEvent(supabase, transaction_id, 'STATUS_UPDATED', { new_status: status });
+
     return res.status(200).json({ status: 'Actualizado', transaction: data[0] });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
-// -----------------------------------------------------------------------------
-// 3. PASARELA DE PAGOS & WEBHOOKS
-// -----------------------------------------------------------------------------
+// 6. Webhook de Pasarela de Pago
 app.post('/api/webhooks/payment', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { transaction_id, payment_status, payment_id } = req.body;
 
     if (!transaction_id || !payment_status) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios: transaction_id o payment_status' });
+      return res.status(400).json({ error: 'Campos requeridos: transaction_id, payment_status' });
     }
 
     if (['approved', 'completed', 'paid'].includes(payment_status.toLowerCase())) {
       const { data, error } = await supabase
         .from('escrow_transactions')
-        .update({ 
-          status: 'funded', 
-          payment_id: payment_id || null,
-          updated_at: new Date().toISOString() 
-        })
+        .update({ status: 'funded', payment_id: payment_id || null })
         .eq('id', transaction_id)
         .select();
 
       if (error) return res.status(400).json({ error: error.message });
-      return res.status(200).json({ status: 'OK', message: 'Fondos retenidos con éxito', transaction: data[0] });
+
+      await logEvent(supabase, transaction_id, 'PAYMENT_RECEIVED', { payment_id, payment_status });
+
+      return res.status(200).json({ status: 'OK', message: 'Fondos asegurados en Escrow', transaction: data[0] });
     }
 
-    return res.status(200).json({ status: 'Ignorado', message: 'El estado del pago no altera la transacción' });
+    return res.status(200).json({ status: 'Ignorado', message: 'Estado de pago no altera el Escrow' });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
-// -----------------------------------------------------------------------------
-// 4. MÓDULO DE DISPUTAS Y RECLAMOS
-// -----------------------------------------------------------------------------
-
-// Abrir una disputa
+// 7. Abrir Disputa
 app.post('/api/escrow/dispute/open', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { transaction_id, opened_by, reason } = req.body;
 
     if (!transaction_id || !opened_by || !reason) {
-      return res.status(400).json({ error: 'Campos requeridos: transaction_id, opened_by, reason' });
+      return res.status(400).json({ error: 'Faltan parámetros: transaction_id, opened_by, reason' });
     }
 
     const { data: tx, error: txError } = await supabase
       .from('escrow_transactions')
-      .update({ status: 'disputed', updated_at: new Date().toISOString() })
+      .update({ status: 'disputed' })
       .eq('id', transaction_id)
       .select();
 
@@ -181,19 +177,21 @@ app.post('/api/escrow/dispute/open', async (req, res) => {
 
     if (disputeError) return res.status(400).json({ error: disputeError.message });
 
+    await logEvent(supabase, transaction_id, 'DISPUTE_OPENED', { opened_by, reason });
+
     return res.status(201).json({ status: 'Disputa Abierta', transaction: tx[0], dispute: dispute[0] });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
-// Listar todas las disputas
+// 8. Listar todas las disputas
 app.get('/api/escrow/disputes/all', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
-    const { data, error } = await supabase.from('escrow_disputes').select('*');
+    const { data, error } = await supabase.from('escrow_disputes').select('*').order('created_at', { ascending: false });
     if (error) return res.status(400).json({ error: error.message });
 
     return res.status(200).json({ status: 'OK', disputes: data || [] });
@@ -202,11 +200,11 @@ app.get('/api/escrow/disputes/all', async (req, res) => {
   }
 });
 
-// Resolver una disputa (Acción de Administrador)
+// 9. Resolver Disputa (Administrador)
 app.post('/api/escrow/dispute/resolve', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
 
     const { dispute_id, transaction_id, winner_role, resolution_notes } = req.body;
 
@@ -218,7 +216,7 @@ app.post('/api/escrow/dispute/resolve', async (req, res) => {
 
     const { data: tx, error: txError } = await supabase
       .from('escrow_transactions')
-      .update({ status: finalStatus, updated_at: new Date().toISOString() })
+      .update({ status: finalStatus })
       .eq('id', transaction_id)
       .select();
 
@@ -237,11 +235,34 @@ app.post('/api/escrow/dispute/resolve', async (req, res) => {
 
     if (disputeError) return res.status(400).json({ error: disputeError.message });
 
+    await logEvent(supabase, transaction_id, 'DISPUTE_RESOLVED', { winner_role, resolution_notes });
+
     return res.status(200).json({ status: 'Disputa Resuelta', transaction: tx[0], dispute: dispute[0] });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
+// 10. Consultar Logs de Auditoría de una Transacción
+app.get('/api/escrow/logs/:transaction_id', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return res.status(500).json({ error: 'Variables de Supabase no configuradas' });
+
+    const { transaction_id } = req.params;
+    const { data, error } = await supabase
+      .from('escrow_logs')
+      .select('*')
+      .eq('transaction_id', transaction_id)
+      .order('created_at', { ascending: true });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    return res.status(200).json({ status: 'OK', logs: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 export default app;
-           
+    
