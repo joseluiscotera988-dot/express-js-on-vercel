@@ -1,31 +1,40 @@
 const express = require('express');
-const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
 const app = express();
 app.use(express.json());
 
-// Servir la carpeta public con el index.html de Pase Y Mire
-app.use(express.static(path.join(__dirname, '../public')));
-
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || '';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let mpClient = null;
-if (MP_ACCESS_TOKEN) {
-  mpClient = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+// Inicialización segura de Supabase
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (e) {
+    console.error("Error al inicializar Supabase:", e);
+  }
 }
 
-// Endpoint de configuración
+// Inicialización segura de Mercado Pago
+let mpClient = null;
+if (MP_ACCESS_TOKEN) {
+  try {
+    mpClient = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+  } catch (e) {
+    console.error("Error al inicializar MP:", e);
+  }
+}
+
+// 1. CONFIGURACIÓN PÚBLICA
 app.get('/api/config', (req, res) => {
   res.json({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY });
 });
 
-// Mercado Pago Preference
+// 2. CREAR PREFERENCIA EN MERCADO PAGO
 app.post('/api/create-preference', async (req, res) => {
   const { order_id, title, price, shipping_cost } = req.body;
   const total = Number(price) + Number(shipping_cost) + ((Number(price) + Number(shipping_cost)) * 0.03);
@@ -52,15 +61,17 @@ app.post('/api/create-preference', async (req, res) => {
   }
 });
 
-// Órdenes generales
+// 3. ÓRDENES GENERALES
 app.get('/api/orders', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
 
-// Driver / Logística Radar
+// 4. LOGÍSTICA / RADAR CHOFERES
 app.get('/api/driver/available-shipments', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { data, error } = await supabase
     .from('orders')
     .select('*')
@@ -73,6 +84,7 @@ app.get('/api/driver/available-shipments', async (req, res) => {
 });
 
 app.post('/api/driver/accept-shipment', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { order_id, driver_id } = req.body;
   const { data, error } = await supabase
     .from('orders')
@@ -81,17 +93,19 @@ app.post('/api/driver/accept-shipment', async (req, res) => {
     .select();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ success: true, order: data[0] });
+  res.json({ success: true, order: data ? data[0] : null });
 });
 
-// Disputas y Admin
+// 5. DISPUTAS Y CONTROL ADMIN
 app.get('/api/disputes', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { data, error } = await supabase.from('disputes').select('*, orders(*)').order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
 
 app.post('/api/disputes', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { order_id, complainant_id, reason } = req.body;
   await supabase.from('disputes').insert([{ order_id, complainant_id, reason }]);
   await supabase.from('orders').update({ status: 'en_disputa' }).eq('id', order_id);
@@ -99,6 +113,7 @@ app.post('/api/disputes', async (req, res) => {
 });
 
 app.post('/api/admin/resolve-dispute', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { dispute_id, order_id, resolution } = req.body;
   await supabase.from('orders').update({ status: resolution }).eq('id', order_id);
   await supabase.from('disputes').update({ status: resolution === 'reembolsado' ? 'resuelta_reembolso' : 'resuelta_liberacion' }).eq('id', dispute_id);
@@ -106,12 +121,14 @@ app.post('/api/admin/resolve-dispute', async (req, res) => {
 });
 
 app.get('/api/admin/kyc-docs', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { data, error } = await supabase.from('kyc_documents').select('*, profiles(nombre, apellido, email, rol)').order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
 
 app.post('/api/admin/kyc-status', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'DB no conectada' });
   const { doc_id, user_id, status } = req.body;
   await supabase.from('kyc_documents').update({ status }).eq('id', doc_id);
   if (status === 'aprobado') {
@@ -120,10 +137,5 @@ app.post('/api/admin/kyc-status', async (req, res) => {
   res.json({ success: true });
 });
 
-// Servir la app principal Pase Y Mire para cualquier otra ruta
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
 module.exports = app;
-                                               
+    
