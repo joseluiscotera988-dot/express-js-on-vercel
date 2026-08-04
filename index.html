@@ -179,9 +179,8 @@
 
   <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
     © 2026 PASE Y MIRE. Todos los derechos reservados. Plataforma de Marketplace & Logística Blindada.
-  </footer>
-
-  <script>
+        </footer>
+    <script>
     let supabaseClient = null;
     let currentUser = null;
 
@@ -343,4 +342,101 @@
       const reason = prompt("Motivo del reclamo:");
       if (!reason) return;
       await fetch('/api/disputes', {
-        method: '
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, complainant_id: currentUser.id, reason })
+      });
+      alert("Disputa enviada a revisión por el administrador.");
+      loadOrders();
+    }
+
+    async function loadAvailableShipments() {
+      const res = await fetch('/api/driver/available-shipments');
+      const shipments = await res.json();
+      const container = document.getElementById('available-shipments-list');
+
+      if (!shipments || shipments.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">Sin envíos pendientes en este momento.</p>`;
+        return;
+      }
+
+      container.innerHTML = shipments.map(s => `
+        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+          <div class="flex justify-between items-start">
+            <h4 class="font-bold text-white text-sm">${s.item_title}</h4>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-bold">$${s.shipping_cost}</span>
+          </div>
+          <p class="text-xs text-slate-400">📍 Origen: <b>${s.origin_address}</b></p>
+          <p class="text-xs text-slate-400">🏁 Destino: <b>${s.destination_address}</b></p>
+          <button onclick="acceptShipment('${s.id}')" class="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition">Tomar Carga</button>
+        </div>
+      `).join('');
+    }
+
+    async function acceptShipment(orderId) {
+      const res = await fetch('/api/driver/accept-shipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, driver_id: currentUser.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("¡Viaje Aceptado! Dirigite al origen.");
+        loadAvailableShipments();
+        loadOrders();
+      }
+    }
+
+    async function loadAdminData() {
+      const resKyc = await fetch('/api/admin/kyc-docs');
+      const kycDocs = await resKyc.json();
+      document.getElementById('admin-kyc-list').innerHTML = kycDocs.length ? kycDocs.map(d => `
+        <div class="flex justify-between items-center bg-slate-950 p-2 rounded">
+          <div><b>${d.profiles?.nombre || 'Usuario'}</b> - ${d.doc_type}</div>
+          <div class="space-x-1">
+            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'aprobado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Aprobar</button>
+            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'rechazado')" class="px-2 py-1 bg-red-600 text-white rounded">Rechazar</button>
+          </div>
+        </div>
+      `).join('') : '<p class="text-slate-500">Sin documentos pendientes.</p>';
+
+      const resDisp = await fetch('/api/disputes');
+      const disputes = await resDisp.json();
+      document.getElementById('admin-disputes-list').innerHTML = disputes.length ? disputes.map(disp => `
+        <div class="bg-slate-950 p-3 rounded space-y-2">
+          <div><b>Orden #${disp.order_id}</b> | Motivo: ${disp.reason}</div>
+          ${disp.status === 'abierta' ? `
+            <div class="space-x-2">
+              <button onclick="resolveDispute('${disp.id}', '${disp.order_id}', 'entregado_liberado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Liberar</button>
+              <button onclick="resolveDispute('${disp.id}', '${disp.order_id}', 'reembolsado')" class="px-2 py-1 bg-red-600 text-white rounded">Reembolsar</button>
+            </div>
+          ` : ''}
+        </div>
+      `).join('') : '<p class="text-slate-500">Sin disputas.</p>';
+    }
+
+    async function updateKyc(docId, userId, status) {
+      await fetch('/api/admin/kyc-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_id: docId, user_id: userId, status })
+      });
+      loadAdminData();
+    }
+
+    async function resolveDispute(disputeId, orderId, resolution) {
+      await fetch('/api/admin/resolve-dispute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dispute_id: disputeId, order_id: orderId, resolution })
+      });
+      loadAdminData();
+      loadOrders();
+    }
+
+    async function handleLogout() { await supabaseClient.auth.signOut(); }
+  </script>
+</body>
+  </html>
+
+          
