@@ -3,6 +3,13 @@ import express, { Request, Response } from 'express';
 const app = express();
 app.use(express.json());
 
+// CONFIGURACIÓN CONFIDENCIAL CUENTA MAESTRA
+const MASTER_ACCOUNT = {
+  cbu: '0000003100077621570425',
+  commissionRate: 0.05, // 5%
+  adminKey: 'PM_ROOT_MASTER_2026'
+};
+
 app.get('/', (req: Request, res: Response) => {
   res.send(`
     <!DOCTYPE html>
@@ -10,211 +17,333 @@ app.get('/', (req: Request, res: Response) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>P&M Ecosistema</title>
+      <title>Pase Y Mire - Ecosistema P&M</title>
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-gray-100 font-sans pb-24 min-h-screen">
-      <!-- Navbar / Header -->
-      <header class="bg-slate-900 text-white p-4 sticky top-0 z-50 shadow-md">
+    <body class="bg-slate-900 text-slate-100 font-sans pb-24 min-h-screen">
+
+      <!-- HEADER CENTRAL -->
+      <header class="bg-slate-950/90 backdrop-blur-md p-4 sticky top-0 z-40 border-b border-slate-800">
         <div class="flex justify-between items-center max-w-md mx-auto">
-          <h1 class="text-xl font-bold tracking-wider text-amber-400">P&M ECOSISTEMA</h1>
-          <div class="bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-xs flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            En línea
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">⚡</span>
+            <h1 class="text-lg font-bold tracking-wider text-amber-400">PASE Y MIRE</h1>
+          </div>
+          <div id="user-badge" onclick="openAuthModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full border border-slate-700 text-xs flex items-center gap-2 cursor-pointer transition">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="user-badge-text" class="font-medium text-slate-200">Invitado (Ingresar)</span>
           </div>
         </div>
       </header>
 
       <main class="max-w-md mx-auto p-4 space-y-6">
 
-        <!-- SECCIÓN 1: INICIO -->
-        <div id="view-home" class="space-y-6">
-          <!-- Billetera / Escrow Balance -->
-          <section class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg border border-slate-700">
-            <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold">Billetera Digital Escrow</p>
-            <div class="flex justify-between items-baseline mt-2">
-              <span class="text-3xl font-extrabold">$ 0,00</span>
-              <span class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full">Protegido</span>
+        <!-- INICIO (PÚBLICO CON PUBLICACIONES & BANNERS) -->
+        <div id="view-home" class="space-y-5">
+          
+          <!-- BANNER PUBLICIDAD MONETIZADO -->
+          <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-center">
+            <span class="text-[10px] uppercase font-bold text-amber-400 tracking-widest bg-amber-500/20 px-2 py-0.5 rounded-full">Espacio Promocionado</span>
+            <p class="text-sm font-bold text-slate-100 mt-1">Anunciá tu comercio o flota de fletes acá</p>
+            <p class="text-xs text-slate-400">Llegá a miles de usuarios en tu zona al instante.</p>
+          </div>
+
+          <!-- RESUMEN BILLETERA CUSTODIA -->
+          <section class="bg-gradient-to-br from-slate-800 to-slate-950 p-5 rounded-2xl shadow-xl border border-slate-800 relative">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Billetera Digital (Escrow)</span>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">Garantía Activa</span>
             </div>
-            <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-700/50">
-              <button onclick="switchView('wallet')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-xl text-sm transition">Cargar Saldo</button>
-              <button onclick="switchView('wallet')" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 rounded-xl text-sm transition">Retirar</button>
+            <div class="flex justify-between items-baseline">
+              <span id="home-balance" class="text-3xl font-extrabold text-white">$ 0,00</span>
+              <span class="text-xs text-slate-400">Fondos Protegidos</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800">
+              <button onclick="protectedAction('wallet')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-xl text-xs transition">Cargar Saldo</button>
+              <button onclick="protectedAction('wallet')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs transition border border-slate-700">Retirar</button>
             </div>
           </section>
 
-          <!-- Accesos Rápidos de Servicios -->
-          <section>
-            <h2 class="text-sm font-bold text-gray-700 uppercase mb-3 tracking-wide">Servicios Principales</h2>
-            <div class="grid grid-cols-2 gap-4">
-              <button onclick="switchView('fletes')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-left hover:border-amber-400 transition">
-                <span class="text-2xl">🚚</span>
-                <h3 class="font-bold text-slate-900 mt-2">Pedir Flete</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Viajes y cargas con pago retenido en custodia.</p>
-              </button>
-              <button onclick="switchView('marketplace')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-left hover:border-amber-400 transition">
-                <span class="text-2xl">🛍️</span>
-                <h3 class="font-bold text-slate-900 mt-2">Marketplace</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Comprá y vendé productos de forma segura.</p>
-              </button>
+          <!-- SERVICIOS DEL SISTEMA NERVIOSO -->
+          <section class="grid grid-cols-2 gap-3">
+            <button onclick="protectedAction('fletes')" class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 text-left hover:border-amber-400/50 transition">
+              <span class="text-2xl">🚚</span>
+              <h3 class="font-bold text-slate-100 text-sm mt-2">Subasta Fletes</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Cotizaciones abiertas y geofencing GPS.</p>
+            </button>
+            <button onclick="protectedAction('marketplace')" class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 text-left hover:border-amber-400/50 transition">
+              <span class="text-2xl">🛍️</span>
+              <h3 class="font-bold text-slate-100 text-sm mt-2">Marketplace</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Comercio seguro con retiro o envío.</p>
+            </button>
+            <button onclick="protectedAction('cadetes')" class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 text-left hover:border-amber-400/50 transition">
+              <span class="text-2xl">🛵</span>
+              <h3 class="font-bold text-slate-100 text-sm mt-2">Cadetería Rapida</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Envíos urbanos inmediatos.</p>
+            </button>
+            <button onclick="protectedAction('qr')" class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 text-left hover:border-amber-400/50 transition">
+              <span class="text-2xl">📱</span>
+              <h3 class="font-bold text-slate-100 text-sm mt-2">Motor QR</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Pagos y check-in al instante.</p>
+            </button>
+          </section>
+
+          <!-- FEED DE OFERTAS EN VIVO -->
+          <section class="bg-slate-800/50 p-4 rounded-2xl border border-slate-800">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Subastas y Ofertas Activas</h2>
+            <div id="live-feed" class="space-y-2">
+              <div class="flex items-center justify-between p-3 bg-slate-800 rounded-xl border border-slate-700/50">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">📦</span>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-200">Flete San Pedro ➔ Rosario</h4>
+                    <p class="text-[10px] text-slate-400">Subasta Abierta • Custodia Escrow 5%</p>
+                  </div>
+                </div>
+                <button onclick="protectedAction('fletes')" class="text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg">Ver / Ofertar</button>
+              </div>
             </div>
           </section>
+
         </div>
 
-        <!-- SECCIÓN 2: FLETES Y SUBASTA -->
-        <div id="view-fletes" class="hidden space-y-6">
-          <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-1">Solicitar Flete (Escrow GPS)</h2>
-            <p class="text-xs text-gray-500 mb-4">Ingresá los datos de tu carga para recibir ofertas de transporte.</p>
-            
-            <form id="flete-form" onsubmit="handleFleteSubmit(event)" class="space-y-3">
+        <!-- FLETES Y SUBASTAS (PROTEGIDO) -->
+        <div id="view-fletes" class="hidden space-y-5">
+          <section class="bg-slate-800/90 p-5 rounded-2xl border border-slate-700 space-y-4">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>🚚</span> Solicitud de Flete (Subasta con Custodia)
+            </h2>
+            <form onsubmit="handleCreateAuction(event)" class="space-y-3">
               <div>
-                <label class="text-xs font-semibold text-gray-600">Origen</label>
-                <input type="text" placeholder="Ej: San Pedro, Bs. As." class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-amber-500" required />
+                <label class="text-xs text-slate-400 font-semibold">Origen</label>
+                <input id="flete-origen" type="text" placeholder="Ej: San Pedro" class="w-full mt-1 p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200" required />
               </div>
               <div>
-                <label class="text-xs font-semibold text-gray-600">Destino</label>
-                <input type="text" placeholder="Ej: Rosario, Santa Fe" class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-amber-500" required />
+                <label class="text-xs text-slate-400 font-semibold">Destino</label>
+                <input id="flete-destino" type="text" placeholder="Ej: Baradero / Rosario" class="w-full mt-1 p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200" required />
               </div>
               <div>
-                <label class="text-xs font-semibold text-gray-600">Tipo de Vehículo Requerido</label>
-                <select class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                <label class="text-xs text-slate-400 font-semibold">Tipo de Carga / Vehículo</label>
+                <select id="flete-vehiculo" class="w-full mt-1 p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200">
                   <option>Camioneta Chicá (hasta 500kg)</option>
-                  <option>Camión mediano (hasta 3000kg)</option>
-                  <option>Furgón / Utilitario</option>
+                  <option>Furgón Utilitario</option>
+                  <option>Camión Mediano (3000kg)</option>
                   <option>Chasis / Acoplado</option>
                 </select>
               </div>
-              <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-sm shadow-md transition mt-2">
-                Publicar en Subasta Abierta 🚀
+              <div>
+                <label class="text-xs text-slate-400 font-semibold">Monto Estimado u Ofrecido ($)</label>
+                <input id="flete-monto" type="number" placeholder="25000" class="w-full mt-1 p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200" required />
+              </div>
+              <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg transition">
+                Lanzar a Subasta Abierta 🚀
               </button>
             </form>
           </section>
         </div>
 
-        <!-- SECCIÓN 3: BILLETERA / TARJETA VIRTUAL -->
-        <div id="view-wallet" class="hidden space-y-6">
-          <!-- Tarjeta Virtual -->
-          <section class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-5 rounded-2xl shadow-xl border border-amber-500/30 relative overflow-hidden">
+        <!-- BILLETERA / TARJETA VIRTUAL (PROTEGIDO) -->
+        <div id="view-wallet" class="hidden space-y-5">
+          <section class="bg-gradient-to-tr from-slate-950 via-slate-900 to-amber-950/40 p-5 rounded-2xl border border-amber-500/30 relative">
             <div class="flex justify-between items-start mb-6">
               <div>
-                <p class="text-xs text-amber-400 font-mono tracking-widest uppercase">Tarjeta Virtual Escrow</p>
-                <h3 class="text-lg font-bold mt-1">P&M Pay Card</h3>
+                <p class="text-[10px] text-amber-400 font-mono tracking-widest uppercase">Tarjeta Virtual Escrow</p>
+                <h3 class="text-base font-bold text-white mt-0.5">P&M Pay Master</h3>
               </div>
-              <span class="text-2xl font-black italic text-amber-400">P&M</span>
+              <span class="text-xl font-black italic text-amber-400 tracking-tighter">P&M</span>
             </div>
             <div class="space-y-1 mb-4">
-              <p class="text-xs text-gray-400">Número de Tarjeta</p>
-              <p class="font-mono text-lg tracking-wider">•••• •••• •••• 9880</p>
+              <p class="text-[10px] text-slate-400">Titular de la Cuenta</p>
+              <p id="card-holder" class="font-mono text-xs tracking-wider uppercase text-slate-200">TITULAR</p>
             </div>
-            <div class="flex justify-between items-center text-xs text-gray-300 font-mono">
-              <span>EXP: 12/28</span>
-              <span>CVC: •••</span>
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+              <span>ESTADO: VERIFICADO 🟢</span>
+              <span>PROTECCIÓN 100%</span>
             </div>
           </section>
-
-          <!-- Motor QR -->
-          <div class="grid grid-cols-2 gap-3">
-            <button class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center hover:bg-amber-50 transition">
-              <span class="text-2xl block mb-1">📱</span>
-              <span class="text-xs font-bold text-slate-800">Escanear QR</span>
-            </button>
-            <button class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center hover:bg-amber-50 transition">
-              <span class="text-2xl block mb-1">💳</span>
-              <span class="text-xs font-bold text-slate-800">Cobrar con QR</span>
-            </button>
-          </div>
         </div>
 
-        <!-- SECCIÓN 4: SUPER-PERFIL -->
-        <div id="view-profile" class="hidden space-y-6">
-          <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 text-center">
-            <div class="w-20 h-20 bg-slate-900 text-amber-400 rounded-full flex items-center justify-center text-2xl font-bold mx-auto border-2 border-amber-400 shadow-md mb-3">
+        <!-- SUPER-PERFIL (PROTEGIDO) -->
+        <div id="view-profile" class="hidden space-y-5">
+          <section class="bg-slate-800 p-5 rounded-2xl border border-slate-700 text-center">
+            <div id="profile-avatar" class="w-16 h-16 bg-slate-900 text-amber-400 rounded-full flex items-center justify-center text-xl font-bold mx-auto border-2 border-amber-400 shadow-md mb-3">
               PM
             </div>
-            <h3 class="font-bold text-slate-900 text-lg">Usuario P&M</h3>
-            <p class="text-xs text-gray-500">Transportista & Comerciante Verificado</p>
+            <h3 id="profile-name" class="font-bold text-slate-100 text-base">Usuario</h3>
+            <p id="profile-role" class="text-xs text-amber-400/90 font-medium">Rol Verificado</p>
+            
+            <div id="admin-badge" class="hidden mt-3 bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs py-1 px-3 rounded-full font-bold inline-block">
+              👑 Cuenta Maestra / Root Admin
+            </div>
 
-            <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-2 text-center">
+            <div class="mt-4 pt-4 border-t border-slate-700/80 grid grid-cols-3 gap-2 text-center">
               <div>
-                <span class="block text-base font-extrabold text-slate-900">4.9 ★</span>
-                <span class="text-[10px] text-gray-500 uppercase">Calificación</span>
+                <span class="block text-sm font-extrabold text-slate-100">5.0 ★</span>
+                <span class="text-[9px] text-slate-400 uppercase">Reputación</span>
               </div>
               <div>
-                <span class="block text-base font-extrabold text-emerald-600">100%</span>
-                <span class="text-[10px] text-gray-500 uppercase">Verificado</span>
+                <span class="block text-sm font-extrabold text-emerald-400">KYC</span>
+                <span class="text-[9px] text-slate-400 uppercase">Biometría</span>
               </div>
               <div>
-                <span class="block text-base font-extrabold text-slate-900">24</span>
-                <span class="text-[10px] text-gray-500 uppercase">Viajes</span>
+                <span class="block text-sm font-extrabold text-amber-400">5%</span>
+                <span class="text-[9px] text-slate-400 uppercase">Comisión</span>
               </div>
             </div>
-          </section>
 
-          <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 space-y-2">
-            <button class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-gray-50 flex justify-between items-center">
-              🔒 Verificación Biométrica (KYC)
-              <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-normal">Activa</span>
-            </button>
-            <button class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-gray-50 flex justify-between items-center">
-              📜 Historial de Trayectoria
-              <span class="text-xs text-gray-400">›</span>
+            <button onclick="logout()" class="mt-5 text-xs text-red-400 border border-red-500/30 px-4 py-1.5 rounded-xl hover:bg-red-500/10">
+              Cerrar Sesión
             </button>
           </section>
         </div>
 
       </main>
 
-      <!-- TabBar Navegación Inferior -->
-      <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-50">
-        <div class="max-w-md mx-auto flex justify-around text-center text-xs text-gray-500">
-          <button id="nav-home" onclick="switchView('home')" class="text-amber-600 font-bold flex flex-col items-center">
+      <!-- MODAL DE REGISTRO / AUTENTICACIÓN -->
+      <div id="auth-modal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden backdrop-blur-md">
+        <div class="bg-slate-900 rounded-3xl p-6 w-full max-w-sm border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-base font-bold text-white">Registro / Acceso P&M</h3>
+            <button onclick="closeAuthModal()" class="text-slate-400 text-xl font-bold">×</button>
+          </div>
+          <p class="text-xs text-slate-400">Registrate con tus datos reales para operar fletes, subastas y custodia de dinero.</p>
+          
+          <form onsubmit="handleRegister(event)" class="space-y-3">
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Nombre Completo</label>
+              <input id="reg-name" type="text" placeholder="Juan Pérez" class="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Teléfono / WhatsApp</label>
+              <input id="reg-phone" type="tel" placeholder="+54 9 ..." class="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200" required />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Rol de Usuario</label>
+              <select id="reg-role" class="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200">
+                <option value="Cliente / Comprador">Cliente / Comprador</option>
+                <option value="Transportista / Flete">Transportista / Flete</option>
+                <option value="Comerciante">Comerciante / Marketplace</option>
+                <option value="Cadete">Cadete Urbano</option>
+                <option value="ADMIN_ROOT">👑 Activar Cuenta Maestra</option>
+              </select>
+            </div>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg transition mt-2">
+              Ingresar al Ecosistema 🚀
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TABBAR NAVEGACIÓN INFERIOR -->
+      <nav class="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 p-2 z-30">
+        <div class="max-w-md mx-auto flex justify-around text-center text-xs text-slate-400">
+          <button id="nav-home" onclick="switchView('home')" class="text-amber-400 font-bold flex flex-col items-center">
             <span class="text-lg">🏠</span>Inicio
           </button>
-          <button id="nav-fletes" onclick="switchView('fletes')" class="flex flex-col items-center hover:text-slate-900">
-            <span class="text-lg">🚚</span>Fletes
+          <button id="nav-fletes" onclick="protectedAction('fletes')" class="flex flex-col items-center hover:text-slate-200">
+            <span class="text-lg">🚚</span>Subastas
           </button>
-          <button id="nav-wallet" onclick="switchView('wallet')" class="flex flex-col items-center hover:text-slate-900">
+          <button id="nav-wallet" onclick="protectedAction('wallet')" class="flex flex-col items-center hover:text-slate-200">
             <span class="text-lg">💳</span>Billetera
           </button>
-          <button id="nav-profile" onclick="switchView('profile')" class="flex flex-col items-center hover:text-slate-900">
+          <button id="nav-profile" onclick="protectedAction('profile')" class="flex flex-col items-center hover:text-slate-200">
             <span class="text-lg">👤</span>Perfil
           </button>
         </div>
       </nav>
 
       <script>
+        let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
+
+        function updateUI() {
+          if (currentUser) {
+            document.getElementById('user-badge-text').innerText = currentUser.name.split(' ')[0] + ' 🟢';
+            document.getElementById('card-holder').innerText = currentUser.name;
+            document.getElementById('profile-name').innerText = currentUser.name;
+            document.getElementById('profile-role').innerText = currentUser.role;
+            document.getElementById('profile-avatar').innerText = currentUser.name.substring(0,2).toUpperCase();
+            
+            if(currentUser.role === 'ADMIN_ROOT') {
+              document.getElementById('admin-badge').classList.remove('hidden');
+            }
+          } else {
+            document.getElementById('user-badge-text').innerText = 'Invitado (Ingresar)';
+          }
+        }
+
+        function protectedAction(targetView) {
+          if (!currentUser) {
+            openAuthModal();
+          } else {
+            switchView(targetView);
+          }
+        }
+
         function switchView(viewName) {
-          // Ocultar todas las vistas
           document.getElementById('view-home').classList.add('hidden');
           document.getElementById('view-fletes').classList.add('hidden');
           document.getElementById('view-wallet').classList.add('hidden');
           document.getElementById('view-profile').classList.add('hidden');
 
-          // Desmarcar todos los botones
           const navIds = ['nav-home', 'nav-fletes', 'nav-wallet', 'nav-profile'];
           navIds.forEach(id => {
             const btn = document.getElementById(id);
             if (btn) {
-              btn.classList.remove('text-amber-600', 'font-bold');
-              btn.classList.add('text-gray-500');
+              btn.classList.remove('text-amber-400', 'font-bold');
+              btn.classList.add('text-slate-400');
             }
           });
 
-          // Mostrar vista seleccionada y marcar botón
           const selectedView = document.getElementById('view-' + viewName);
           const selectedNav = document.getElementById('nav-' + viewName);
 
           if (selectedView) selectedView.classList.remove('hidden');
           if (selectedNav) {
-            selectedNav.classList.add('text-amber-600', 'font-bold');
-            selectedNav.classList.remove('text-gray-500');
+            selectedNav.classList.add('text-amber-400', 'font-bold');
+            selectedNav.classList.remove('text-slate-400');
           }
         }
 
-        function handleFleteSubmit(e) {
-          e.preventDefault();
-          alert('🚀 ¡Flete publicado en la subasta abierta! Los transportistas cercanos comenzarán a cotizar.');
+        function openAuthModal() {
+          document.getElementById('auth-modal').classList.remove('hidden');
         }
+
+        function closeAuthModal() {
+          document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function handleRegister(e) {
+          e.preventDefault();
+          const name = document.getElementById('reg-name').value;
+          const phone = document.getElementById('reg-phone').value;
+          const role = document.getElementById('reg-role').value;
+
+          currentUser = { name, phone, role };
+          localStorage.setItem('pm_user', JSON.stringify(currentUser));
+          
+          updateUI();
+          closeAuthModal();
+          alert('🎉 ¡Sesión iniciada con éxito! Cuenta activada para operar.');
+        }
+
+        function handleCreateAuction(e) {
+          e.preventDefault();
+          const origen = document.getElementById('flete-origen').value;
+          const destino = document.getElementById('flete-destino').value;
+          const monto = document.getElementById('flete-monto').value;
+
+          alert('🚀 Flete publicado en Subasta Abierta (Origen: ' + origen + ' ➔ Destino: ' + destino + ' par $' + monto + '). Custodia 5% activa.');
+          switchView('home');
+        }
+
+        function logout() {
+          localStorage.removeItem('pm_user');
+          currentUser = null;
+          updateUI();
+          switchView('home');
+        }
+
+        updateUI();
       </script>
     </body>
     </html>
@@ -222,4 +351,4 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 export default app;
-           
+  
