@@ -13,6 +13,9 @@ const MASTER_CONFIG = {
 const activeTrackingLocations: Record<string, { lat: number; lng: number; updatedAt: Date; carrierId: string }> = {};
 const qrEscrowTokens: Record<string, { token: string; amount: number; carrierPayout: number; masterFee: number; status: string; createdAt: Date }> = {};
 
+// ALMACENAMIENTO DE MENSAJES DE CHAT POR SUBASTA
+const chatMessages: Record<string, Array<{ id: string; sender: string; text: string; timestamp: Date }>> = {};
+
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 
@@ -20,10 +23,10 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ONLINE',
     ecosistema: 'Pase Y Mire (P&M)',
+    chat_system: 'ENABLED',
     gps_tracking: 'ENABLED',
     qr_escrow_security: 'ENABLED',
     payments_gateway: 'Mercado Pago Ready',
-    master_cbu_configured: true,
     timestamp: new Date()
   });
 });
@@ -89,10 +92,10 @@ app.post('/api/payments/create-preference', async (req: Request, res: Response) 
     if (data.init_point) {
       res.json({ success: true, init_point: data.init_point, split: { totalAmount: total, masterFee_5pct: masterFee, carrierPayout_95pct: carrierPayout } });
     } else {
-      res.status(500).json({ success: false, error: 'No se pudo generar checkout de Mercado Pago.' });
+      res.status(500).json({ success: false, error: 'No se pudo generar checkout.' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Error conectando con pasarela de pago.' });
+    res.status(500).json({ success: false, error: 'Error en pasarela de pago.' });
   }
 });
 
@@ -125,8 +128,36 @@ app.post('/api/escrow/release', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Pago Escrow Liberado', details: qrEscrowTokens[key] });
 });
 
+// ENDPOINTS CHAT EN TIEMPO REAL
+app.get('/api/chat/:auctionId', (req: Request, res: Response) => {
+  const { auctionId } = req.params;
+  res.json({ success: true, messages: chatMessages[auctionId] || [] });
+});
+
+app.post('/api/chat/send', (req: Request, res: Response) => {
+  const { auctionId, sender, text } = req.body;
+  if (!auctionId || !text) {
+    return res.status(400).json({ success: false, error: 'Subasta y mensaje son requeridos.' });
+  }
+
+  if (!chatMessages[auctionId]) {
+    chatMessages[auctionId] = [];
+  }
+
+  const newMessage = {
+    id: `msg_${Date.now()}`,
+    sender: sender || 'Usuario',
+    text,
+    timestamp: new Date()
+  };
+
+  chatMessages[auctionId].push(newMessage);
+  res.status(201).json({ success: true, message: newMessage });
+});
+
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 export default app;
+  
