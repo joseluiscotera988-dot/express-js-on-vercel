@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EscrowGuard - Sistema de Pagos Seguros</title>
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS CDN -->
+  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
@@ -25,7 +25,7 @@
     </div>
   </header>
 
-  <!-- LANDING PAGE (Página de Inicio) -->
+  <!-- LANDING PAGE (Inicio) -->
   <main id="landing-view" class="max-w-6xl mx-auto px-4 py-16 flex-grow flex flex-col justify-center items-center text-center">
     <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full border border-emerald-500/20 mb-6">Plataforma Segura 100% Automatizada</span>
     <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6">
@@ -63,7 +63,7 @@
     </div>
   </main>
 
-  <!-- DASHBOARD (Visible solo tras iniciar sesión) -->
+  <!-- DASHBOARD (Visible solo tras loguearse) -->
   <main id="dashboard-view" class="hidden max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
     <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
       <div>
@@ -75,7 +75,6 @@
       </button>
     </div>
 
-    <!-- AQUÍ VA TU DASHBOARD DE TRANSACCIONES EXISTENTE -->
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-8">
       <h3 class="text-lg font-bold mb-4 text-emerald-400">Crear Nueva Orden</h3>
       <form id="order-form" class="space-y-4">
@@ -88,7 +87,7 @@
     </div>
   </main>
 
-  <!-- MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO) -->
+  <!-- MODAL DE AUTENTICACIÓN -->
   <div id="auth-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
       <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
@@ -126,46 +125,21 @@
     © 2026 EscrowGuard. Todos los derechos reservados.
   </footer>
 
-  <!-- LÓGICA CON SUPABASE -->
   <script>
-    // Configuración de Supabase
-    const SUPABASE_URL = "TU_SUPABASE_URL"; // Se puede inyectar o leer
-    const SUPABASE_KEY = "TU_SUPABASE_KEY";
+    // Inicialización de Supabase con tus variables públicas
+    const SUPABASE_URL = "https://your-project.supabase.co"; // Reemplazar con tu URL de Supabase si no usa backend
+    const SUPABASE_KEY = "your-anon-key";
     
-    // Inicializar cliente de Supabase
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let currentAuthMode = 'login'; // 'login' o 'register'
-
-    // Comprobar estado de la sesión al cargar
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      updateUI(session);
-
-      // Escuchar cambios de sesión en tiempo real
-      supabaseClient.auth.onAuthStateChange((_event, session) => {
-        updateUI(session);
-      });
-    });
-
-    function updateUI(session) {
-      const landing = document.getElementById('landing-view');
-      const dashboard = document.getElementById('dashboard-view');
-      const navActions = document.getElementById('nav-actions');
-
-      if (session) {
-        landing.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-        document.getElementById('user-email-display').innerText = `Sesión iniciada como: ${session.user.email}`;
-        navActions.classList.add('hidden');
-      } else {
-        landing.classList.remove('hidden');
-        dashboard.classList.add('hidden');
-        navActions.classList.remove('hidden');
-      }
+    let supabaseClient;
+    if (typeof supabase !== 'undefined') {
+      supabaseClient = supabase.createClient(
+        window.location.origin.includes('vercel') ? '/api' : SUPABASE_URL,
+        SUPABASE_KEY
+      );
     }
 
-    // Funciones del Modal
+    let currentAuthMode = 'login';
+
     function showAuthModal(mode) {
       currentAuthMode = mode;
       document.getElementById('auth-modal').classList.remove('hidden');
@@ -193,7 +167,6 @@
       showAuthModal(currentAuthMode === 'login' ? 'register' : 'login');
     }
 
-    // Manejo del formulario de Autenticación
     async function handleAuthSubmit(event) {
       event.preventDefault();
       const email = document.getElementById('auth-email').value;
@@ -204,30 +177,46 @@
       errorDiv.classList.add('hidden');
       successDiv.classList.add('hidden');
 
-      if (currentAuthMode === 'login') {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-          errorDiv.innerText = error.message;
-          errorDiv.classList.remove('hidden');
-        } else {
+      try {
+        if (currentAuthMode === 'login') {
+          const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
           hideAuthModal();
-        }
-      } else {
-        const { error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) {
-          errorDiv.innerText = error.message;
-          errorDiv.classList.remove('hidden');
+          updateUI({ user: { email } });
         } else {
-          successDiv.innerText = "¡Registro exitoso! Revisa tu email para confirmar o inicia sesión.";
+          const { error } = await supabaseClient.auth.signUp({ email, password });
+          if (error) throw error;
+          successDiv.innerText = "¡Registro exitoso! Ya podés iniciar sesión.";
           successDiv.classList.remove('hidden');
         }
+      } catch (err) {
+        errorDiv.innerText = err.message || "Ocurrió un error";
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    function updateUI(session) {
+      const landing = document.getElementById('landing-view');
+      const dashboard = document.getElementById('dashboard-view');
+      const navActions = document.getElementById('nav-actions');
+
+      if (session) {
+        landing.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        document.getElementById('user-email-display').innerText = `Sesión iniciada como: ${session.user.email}`;
+        navActions.classList.add('hidden');
+      } else {
+        landing.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+        navActions.classList.remove('hidden');
       }
     }
 
     async function handleLogout() {
-      await supabaseClient.auth.signOut();
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      updateUI(null);
     }
   </script>
 </body>
-  </html>
+          </html>
   
