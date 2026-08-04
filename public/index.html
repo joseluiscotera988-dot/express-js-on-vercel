@@ -296,7 +296,7 @@
       </section>
     </div>
 
-  </main>
+    </main>
     <!-- MODAL AUTENTICACIÓN Y REGISTRO KYC OBLIGATORIO -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-card rounded-3xl p-6 w-full max-w-sm border-slate-700/80 space-y-4 shadow-2xl">
@@ -357,7 +357,7 @@
     </div>
   </nav>
 
-  <!-- LÓGICA INTERACTIVA CONECTADA A LA API REAL -->
+  <!-- LÓGICA INTERACTIVA Y CONEXIÓN CON MERCADO PAGO API -->
   <script>
     let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
 
@@ -432,7 +432,6 @@
       document.getElementById('auth-modal').classList.add('hidden');
     }
 
-    // PETICIÓN HTTP REAL AL BACKEND PARA REGISTRO KYC
     async function handleRegister(e) {
       e.preventDefault();
       const name = document.getElementById('reg-name').value;
@@ -460,7 +459,7 @@
 
           updateAuthUI();
           closeAuthModal();
-          alert('🎉 Identidad verificada y registrada en el servidor Backend.\nID asignado: ' + data.user.id);
+          alert('🎉 Identidad verificada y registrada en Backend.\nID asignado: ' + data.user.id);
         } else {
           alert('❌ Error: ' + data.error);
         }
@@ -485,23 +484,67 @@
       }
     }
 
+    // BOTÓN Y PROCESAMIENTO DE PAGO CON MERCADO PAGO
+    async function payWithMercadoPago(auctionId, title, amount) {
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+
+      try {
+        const userEmail = `${currentUser.phone.replace(/[^0-9]/g, '')}@paseymire.com`;
+
+        const response = await fetch('/api/payments/create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            auctionId: auctionId,
+            title: title,
+            amount: amount,
+            payerEmail: userEmail
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.init_point) {
+          alert(`⚡ Redirigiendo al Checkout de Mercado Pago...\n\nDesglose Transacción:\n• Total: $${data.split.totalAmount.toLocaleString()}\n• Retención Plataforma (5%): $${data.split.masterFee_5pct.toLocaleString()}\n• Fondo Escrow (95%): $${data.split.carrierPayout_95pct.toLocaleString()}`);
+          
+          window.location.href = data.init_point;
+        } else {
+          alert('❌ Error Mercado Pago: ' + (data.error || 'No se generó la preferencia.'));
+        }
+      } catch (error) {
+        console.error('Error procesando pago:', error);
+        alert('❌ Error de red al intentar cobrar.');
+      }
+    }
+
     function renderFeed() {
       const feedContainer = document.getElementById('live-auction-feed');
       if (!feedContainer) return;
+
       feedContainer.innerHTML = mockFletes.map(f => `
-        <div class="flex items-center justify-between p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs">
-              <i class="fa-solid fa-truck"></i>
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs">
+                <i class="fa-solid fa-truck"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
+                <p class="text-[10px] text-slate-400">${f.carga} • Total: <span class="text-emerald-400 font-bold">$ ${Number(f.monto).toLocaleString()}</span></p>
+              </div>
             </div>
-            <div>
-              <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
-              <p class="text-[10px] text-slate-400">${f.carga} • Oferta: <span class="text-emerald-400 font-bold">$ ${Number(f.monto).toLocaleString()}</span></p>
-            </div>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2.5 py-1 rounded-lg border border-amber-500/30">
+              ${f.estado}
+            </span>
           </div>
-          <button onclick="protectedAction('fletes')" class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2.5 py-1 rounded-lg border border-amber-500/30">
-            ${f.estado}
-          </button>
+          <div class="flex gap-2 pt-1">
+            <button onclick="payWithMercadoPago('${f.id}', '${f.origen} a ${f.destino}', ${f.monto})" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition shadow-lg shadow-blue-600/20">
+              <i class="fa-solid fa-credit-card"></i> Pagar Flete con Mercado Pago
+            </button>
+          </div>
         </div>
       `).join('');
 
@@ -522,7 +565,6 @@
       }
     }
 
-    // PETICIÓN HTTP REAL AL BACKEND PARA CREAR SUBASTAS CON RETENCIÓN DEL 5%
     async function handleCreateAuction(e) {
       e.preventDefault();
       const origen = document.getElementById('flete-origen').value;
@@ -556,18 +598,14 @@
           });
 
           renderFeed();
-          alert('🚀 Subasta procesada en servidor Node.js Real:\n' +
-                'Monto Total: $' + data.auction.totalAmount.toLocaleString() + '\n' +
-                'Comisión 5% asignada: $' + data.auction.masterFee_5pct.toLocaleString() + '\n' +
-                'Pago Prestador (95%): $' + data.auction.carrierPayout_95pct.toLocaleString() + '\n' +
-                'CBU Ruteo Destino: ' + data.auction.destinationCBU);
+          alert('🚀 Subasta registrada:\nMonto: $' + data.auction.totalAmount.toLocaleString() + '\n5% Retención: $' + data.auction.masterFee_5pct.toLocaleString());
           switchView('home');
         } else {
-          alert('❌ Error servidor: ' + data.error);
+          alert('❌ Error: ' + data.error);
         }
       } catch (error) {
-        console.error('Error al crear subasta en API:', error);
-        alert('❌ Error de conexión con la API de subastas.');
+        console.error('Error al crear subasta:', error);
+        alert('❌ Error de conexión.');
       }
     }
 
@@ -598,5 +636,6 @@
     });
   </script>
 </body>
-            </html>
-      
+                                                    </html>
+  
+                                                              
