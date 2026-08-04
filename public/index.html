@@ -3,144 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EscrowGuard - Sistema Logístico y Plataforma Completa</title>
+  <title>Pase Y Mire - Marketplace, Fletes y Pagos Seguros</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR PASE Y MIRE -->
   <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <span class="text-2xl">🛡️</span>
-        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard Logística</span>
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🛒</span>
+        <div>
+          <span class="text-xl font-extrabold tracking-wide bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">PASE Y MIRE</span>
+          <span class="hidden sm:inline-block text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full ml-2 font-mono">Plataforma Oficial</span>
+        </div>
       </div>
-      <div id="nav-guest" class="flex gap-3">
-        <button onclick="showAuthView('login')" class="px-4 py-2 text-sm hover:text-emerald-400 transition">Iniciar Sesión</button>
-        <button onclick="showAuthView('register')" class="px-4 py-2 text-sm bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-lg transition">Registrarse</button>
+      <div id="nav-guest" class="flex items-center gap-3">
+        <button onclick="showAuthView('login')" class="px-4 py-2 text-sm font-medium hover:text-emerald-400 transition">Iniciar Sesión</button>
+        <button onclick="showAuthView('register')" class="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-lg transition">Registrarse</button>
       </div>
       <div id="nav-user" class="hidden flex items-center gap-4">
         <span id="user-display" class="text-xs font-mono text-emerald-400"></span>
-        <button onclick="handleLogout()" class="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">Cerrar Sesión</button>
+        <button onclick="handleLogout()" class="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition">Cerrar Sesión</button>
       </div>
     </div>
   </header>
 
-  <!-- LOGIN Y REGISTRO KYC -->
+  <!-- REGISTRO Y LOGIN -->
   <main id="view-auth" class="max-w-xl mx-auto my-8 px-4 w-full">
     <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
       <div class="flex border-b border-slate-800 mb-6">
         <button id="tab-login-btn" onclick="showAuthView('login')" class="w-1/2 py-3 text-center font-bold border-b-2 border-emerald-500 text-emerald-400">Iniciar Sesión</button>
-        <button id="tab-register-btn" onclick="showAuthView('register')" class="w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent">Registro KYC</button>
+        <button id="tab-register-btn" onclick="showAuthView('register')" class="w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent">Registro Completo KYC</button>
       </div>
 
       <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
-        <input type="email" id="login-email" placeholder="Correo electrónico" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white" required />
-        <input type="password" id="login-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white" required />
-        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Ingresar</button>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
+          <input type="email" id="login-email" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
+          <input type="password" id="login-password" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+        </div>
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Ingresar a Pase Y Mire</button>
       </form>
 
       <form id="form-register" onsubmit="handleRegister(event)" class="hidden space-y-4">
         <div class="grid grid-cols-2 gap-4">
-          <input type="text" id="reg-nombre" placeholder="Nombre" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          <input type="text" id="reg-apellido" placeholder="Apellido" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+          <input type="text" id="reg-nombre" placeholder="Nombre" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+          <input type="text" id="reg-apellido" placeholder="Apellido" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <input type="text" id="reg-dni" placeholder="DNI" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          <input type="tel" id="reg-telefono" placeholder="Teléfono" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+          <input type="text" id="reg-dni" placeholder="DNI / Documento" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+          <input type="tel" id="reg-telefono" placeholder="Teléfono Móvil" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
         </div>
-        <input type="text" id="reg-direccion" placeholder="Dirección Legal" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        <select id="reg-rol" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white">
-          <option value="cliente">Comprador / Vendedor</option>
-          <option value="chofer_flete">Conductor Fletes / Mudanzas</option>
-          <option value="chofer_remis">Conductor Remis / Traslados</option>
-          <option value="mensajero">Mensajería Urbana (Moto)</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <input type="email" id="reg-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        <input type="password" id="reg-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Crear Cuenta</button>
+        <input type="text" id="reg-direccion" placeholder="Dirección Real / Legal" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Tipo de Usuario / Rol</label>
+          <select id="reg-rol" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none">
+            <option value="cliente">Comprador / Vendedor (Marketplace)</option>
+            <option value="chofer_flete">Conductor de Fletes & Mudanzas</option>
+            <option value="chofer_remis">Conductor de Remis / Traslados</option>
+            <option value="mensajero">Mensajería Urbana (Moto/Bici)</option>
+            <option value="admin">Administrador del Sistema</option>
+          </select>
+        </div>
+        <input type="email" id="reg-email" placeholder="Correo Electrónico" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+        <input type="password" id="reg-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Crear Cuenta KYC</button>
       </form>
     </div>
   </main>
 
-  <!-- DASHBOARD PRINCIPAL -->
+  <!-- PANEL DE CONTROL PRINCIPAL -->
   <main id="view-dashboard" class="hidden max-w-7xl mx-auto px-4 py-8 w-full space-y-8">
     
-    <!-- PERFIL -->
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex justify-between items-center">
+    <!-- CABECERA DE USUARIO -->
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
       <div>
-        <h2 id="profile-name" class="text-xl font-bold text-white">Cargando...</h2>
+        <h2 id="profile-name" class="text-2xl font-bold text-white">Cargando perfil...</h2>
         <p id="profile-details" class="text-xs text-slate-400 mt-1"></p>
       </div>
-      <span id="role-tag" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full uppercase">ROL</span>
+      <div class="flex items-center gap-3">
+        <span id="role-tag" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full uppercase">ROL</span>
+      </div>
     </div>
 
-    <!-- MÓDULO 4: PANEL CONDUCTORES / CHOFERES (LOGÍSTICA) -->
+    <!-- RADAR PARA TRANSPORTISTAS (FLETES, REMISES Y MENSAJERÍA) -->
     <div id="driver-section" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
-          <span>🚚</span> Radar de Envíos & Fletes Disponibles
+          <span>🚚</span> Radar Logístico de Viajes Disponibles
         </h3>
-        <button onclick="loadAvailableShipments()" class="text-xs text-slate-400 hover:text-white">🔄 Buscar Cargas</button>
+        <button onclick="loadAvailableShipments()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg">🔄 Actualizar Cargas</button>
       </div>
-
       <div id="available-shipments-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <p class="text-xs text-slate-500 col-span-full text-center">Buscando viajes cercanos...</p>
+        <p class="text-xs text-slate-500 col-span-full text-center py-4">Buscando viajes activos...</p>
       </div>
     </div>
 
-    <!-- PANEL DE ADMIN -->
+    <!-- PANEL DE ADMINISTRACIÓN Y MEDIACIÓN -->
     <div id="admin-section" class="hidden space-y-6 border-2 border-amber-500/30 p-6 rounded-2xl bg-amber-500/5">
-      <h3 class="text-lg font-bold text-amber-400">⚡ Panel de Administrador</h3>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <h4 class="text-sm font-bold text-white mb-3">Revisión KYC</h4>
-        <div id="admin-kyc-list" class="space-y-2 text-xs">Cargando...</div>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <h4 class="text-sm font-bold text-white mb-3">⚖️ Disputas Activas</h4>
-        <div id="admin-disputes-list" class="space-y-2 text-xs">Cargando...</div>
+      <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2"><span>⚡</span> Panel de Mediación y Control de Administrador</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <h4 class="text-sm font-bold text-white mb-3">Documentos KYC Pendientes</h4>
+          <div id="admin-kyc-list" class="space-y-2 text-xs">Cargando...</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <h4 class="text-sm font-bold text-white mb-3">⚖️ Disputas Activas</h4>
+          <div id="admin-disputes-list" class="space-y-2 text-xs">Cargando...</div>
+        </div>
       </div>
     </div>
 
-    <!-- PANEL GENERAL / SOLICITAR ENVÍO -->
+    <!-- COTIZADOR Y TABLA DE ÓRDENES -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-        <h3 class="text-base font-bold text-emerald-400 mb-4">💳 Cotizar Servicio & Escrow</h3>
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+        <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+          <span>📦</span> Cotizar Producto / Flete Escrow
+        </h3>
         <form onsubmit="handleCreateOrderAndPay(event)" class="space-y-3">
-          <input type="text" id="order-title" placeholder="Producto o Servicio" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <input type="text" id="order-title" placeholder="Descripción del producto o servicio" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
           <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="order-price" placeholder="Precio ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-            <input type="number" id="order-ship-cost" placeholder="Envío ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+            <input type="number" id="order-price" oninput="recalculate()" placeholder="Monto Producto ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+            <input type="number" id="order-ship-cost" oninput="recalculate()" placeholder="Monto Envío ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
           </div>
           <select id="order-ship-type" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white">
-            <option value="mensajeria">🛵 Mensajería</option>
-            <option value="remis">🚗 Remis</option>
-            <option value="flete">🚚 Flete & Mudanza</option>
-            <option value="larga_distancia">🚛 Larga Distancia</option>
+            <option value="mensajeria">🛵 Mensajería Urbana (Moto/Bici)</option>
+            <option value="remis">🚗 Remis / Traslado Directo</option>
+            <option value="flete">🚚 Flete & Mudanza (Carga)</option>
+            <option value="larga_distancia">🚛 Larga Distancia (Encomienda)</option>
           </select>
-          <input type="text" id="order-origin" placeholder="Origen" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-          <input type="text" id="order-destination" placeholder="Destino" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg text-xs transition">Pagar y Congelar Fondos</button>
+          <input type="text" id="order-origin" placeholder="Dirección de Retiro (Origen)" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <input type="text" id="order-destination" placeholder="Dirección de Entrega (Destino)" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+
+          <div class="p-3 bg-slate-950/60 rounded-lg text-xs space-y-1 text-slate-400">
+            <div class="flex justify-between"><span>Comisión Escrow (3%):</span><span id="calc-fee" class="text-emerald-400 font-mono">$0.00</span></div>
+            <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800"><span>Total a Custodiar:</span><span id="calc-total" class="font-mono text-emerald-400">$0.00</span></div>
+          </div>
+
+          <button type="submit" id="pay-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg text-xs transition flex items-center justify-center gap-2">
+            <span>🔵</span> Pagar y Congelar Fondos en Mercado Pago
+          </button>
         </form>
       </div>
 
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-        <h3 class="text-base font-bold text-white mb-4">Mis Órdenes & Transacciones</h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-base font-bold text-white">Historial de Órdenes Y Transacciones</h3>
+          <button onclick="loadOrders()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1 rounded">🔄 Actualizar</button>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-950 text-slate-400 uppercase">
               <tr>
                 <th class="p-3">Detalle</th>
-                <th class="p-3">PIN</th>
+                <th class="p-3">Servicio</th>
+                <th class="p-3">PIN Entrega</th>
                 <th class="p-3">Estado</th>
                 <th class="p-3 text-right">Acción</th>
               </tr>
             </thead>
             <tbody id="orders-list" class="divide-y divide-slate-800">
-              <tr><td colspan="4" class="p-4 text-center text-slate-500">Cargando...</td></tr>
+              <tr><td colspan="5" class="p-4 text-center text-slate-500">Cargando órdenes...</td></tr>
             </tbody>
           </table>
         </div>
@@ -148,19 +177,28 @@
     </div>
   </main>
 
+  <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+    © 2026 PASE Y MIRE. Todos los derechos reservados. Plataforma de Marketplace & Logística Blindada.
+  </footer>
+
+  <!-- LÓGICA CLIENTE -->
   <script>
     let supabaseClient = null;
     let currentUser = null;
-    let userProfile = null;
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const res = await fetch('/api/config');
-      const config = await res.json();
-      supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-      
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      handleAuthChange(session);
-      supabaseClient.auth.onAuthStateChange((_e, s) => handleAuthChange(s));
+      try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        if (config.supabaseUrl && config.supabaseKey) {
+          supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          handleAuthChange(session);
+          supabaseClient.auth.onAuthStateChange((_e, s) => handleAuthChange(s));
+        }
+      } catch (e) {
+        console.error("Error inicializando app:", e);
+      }
     });
 
     function handleAuthChange(session) {
@@ -213,7 +251,6 @@
     async function loadProfile() {
       const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
       if (data) {
-        userProfile = data;
         document.getElementById('profile-name').innerText = `${data.nombre} ${data.apellido}`;
         document.getElementById('profile-details').innerText = `DNI: ${data.dni} | Dirección: ${data.direccion}`;
         document.getElementById('role-tag').innerText = data.rol.toUpperCase();
@@ -231,42 +268,13 @@
       }
     }
 
-    // CARGAR RADAR DE VIAJES DISPONIBLES PARA CHOFERES
-    async function loadAvailableShipments() {
-      const res = await fetch('/api/driver/available-shipments');
-      const shipments = await res.json();
-      const container = document.getElementById('available-shipments-list');
-
-      if (!shipments || shipments.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No hay envíos pendientes de chofer en este momento.</p>`;
-        return;
-      }
-
-      container.innerHTML = shipments.map(s => `
-        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-          <div class="flex justify-between items-start">
-            <h4 class="font-bold text-white text-sm">${s.item_title}</h4>
-            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">$${s.shipping_cost} (Ganancia Chofer)</span>
-          </div>
-          <p class="text-xs text-slate-400">📍 Origen: <b>${s.origin_address}</b></p>
-          <p class="text-xs text-slate-400">🏁 Destino: <b>${s.destination_address}</b></p>
-          <button onclick="acceptShipment('${s.id}')" class="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition">Aceptar Viaje</button>
-        </div>
-      `).join('');
-    }
-
-    async function acceptShipment(orderId) {
-      const res = await fetch('/api/driver/accept-shipment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId, driver_id: currentUser.id })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert("¡Viaje Aceptado! Podés dirigirte al punto de origen.");
-        loadAvailableShipments();
-        loadOrders();
-      }
+    function recalculate() {
+      const price = Number(document.getElementById('order-price').value) || 0;
+      const ship = Number(document.getElementById('order-ship-cost').value) || 0;
+      const totalBase = price + ship;
+      const fee = totalBase * 0.03;
+      document.getElementById('calc-fee').innerText = `$${fee.toFixed(2)}`;
+      document.getElementById('calc-total').innerText = `$${(totalBase + fee).toFixed(2)}`;
     }
 
     async function handleCreateOrderAndPay(e) {
@@ -302,19 +310,20 @@
       const { data: orders } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
       const tbody = document.getElementById('orders-list');
       if (!orders || orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Sin órdenes.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Sin órdenes guardadas.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = orders.map(o => `
         <tr class="hover:bg-slate-900/50">
-          <td class="p-3"><div class="font-bold text-white">${o.item_title}</div><div class="text-[10px] text-slate-500">${o.shipping_type.toUpperCase()}</div></td>
+          <td class="p-3"><div class="font-bold text-white">${o.item_title}</div><div class="text-[10px] text-slate-500">${o.origin_address} ➔ ${o.destination_address}</div></td>
+          <td class="p-3 uppercase text-emerald-400 text-[10px] font-bold">${o.shipping_type}</td>
           <td class="p-3 font-mono font-bold text-amber-400">${o.pin_code}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border uppercase">${o.status}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">${o.status}</span></td>
           <td class="p-3 text-right space-x-1">
-            ${o.status === 'fondos_retendidos' || o.status === 'chofer_asignado' || o.status === 'en_transito' ? `
-              <button onclick="releaseFunds('${o.id}')" class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded">Ingresar PIN</button>
-              <button onclick="openDispute('${o.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded">Disputar</button>
+            ${o.status === 'fondos_retendidos' || o.status === 'chofer_asignado' ? `
+              <button onclick="releaseFunds('${o.id}')" class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded hover:bg-emerald-500/30">Validar PIN</button>
+              <button onclick="openDispute('${o.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded hover:bg-amber-500/30">Abrir Disputa</button>
             ` : '-'}
           </td>
         </tr>
@@ -322,46 +331,16 @@
     }
 
     async function releaseFunds(id) {
-      const pin = prompt("Ingrese PIN de entrega:");
+      const pin = prompt("Ingrese PIN de entrega recibido:");
       const { data: order } = await supabaseClient.from('orders').select('pin_code').eq('id', id).single();
       if (order && order.pin_code === pin) {
         await supabaseClient.from('orders').update({ status: 'entregado_liberado' }).eq('id', id);
-        alert("PIN Aceptado. Fondos liberados al vendedor y al chofer.");
+        alert("PIN Aceptado. Fondos liberados al Vendedor y Chofer.");
         loadOrders();
-      } else { alert("PIN incorrecto."); }
+      } else { alert("PIN Incorrecto."); }
     }
 
     async function openDispute(orderId) {
-      const reason = prompt("Motivo de la disputa:");
+      const reason = prompt("Motivo del reclamo:");
       if (!reason) return;
-      await fetch('/api/disputes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId, complainant_id: currentUser.id, reason })
-      });
-      alert("Disputa registrada.");
-      loadOrders();
-    }
-
-    async function loadAdminData() {
-      const resKyc = await fetch('/api/admin/kyc-docs');
-      const kycDocs = await resKyc.json();
-      document.getElementById('admin-kyc-list').innerHTML = kycDocs.length ? kycDocs.map(d => `
-        <div class="flex justify-between items-center bg-slate-950 p-2 rounded">
-          <div><b>${d.profiles?.nombre || 'Usuario'}</b> - Tipo: ${d.doc_type} (${d.status})</div>
-          <div class="space-x-1">
-            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'aprobado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Aprobar</button>
-            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'rechazado')" class="px-2 py-1 bg-red-600 text-white rounded">Rechazar</button>
-          </div>
-        </div>
-      `).join('') : '<p class="text-slate-500">Sin documentos pendientes.</p>';
-
-      const resDisp = await fetch('/api/disputes');
-      const disputes = await resDisp.json();
-      document.getElementById('admin-disputes-list').innerHTML = disputes.length ? disputes.map(disp => `
-        <div class="bg-slate-950 p-3 rounded space-y-2">
-          <div><b>Orden #${disp.order_id}</b> | Motivo: ${disp.reason}</div>
-          ${disp.status === 'abierta' ? `
-            <div class="space-x-2">
-              <button onclick="resolveDispute('${disp.id}', '${disp.order_id}', 'entregado_liberado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Liberar</button>
-              <button on
+      await fetch('/api/
