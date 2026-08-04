@@ -1,12 +1,14 @@
 import express from 'express';
 import escrowRouter from './routes/escrow';
+import marketplaceRouter from './routes/marketplace';
+import webhooksRouter from './routes/webhooks';
 
 const app = express();
 
-// Middleware para entender JSON en las peticiones
+// Middleware para parsear JSON
 app.use(express.json());
 
-// Ruta principal de inicio (raíz '/')
+// Ruta principal
 app.get('/', (req, res) => {
   res.json({
     status: 'OK',
@@ -14,7 +16,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Ruta de estado de la API
+// Chequeo de estado del sistema
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -22,7 +24,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Rutas de módulos
+// Enrutador de módulos
 app.use('/api/escrow', escrowRouter);
+app.use('/api/marketplace', marketplaceRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 export default app;
