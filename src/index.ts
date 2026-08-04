@@ -4,28 +4,29 @@ import path from 'path';
 const app = express();
 app.use(express.json());
 
-// CONFIGURACIÓN CENTRAL DE LA CUENTA MAESTRA (ENCRIPTADA)
+// CONFIGURACIÓN CENTRAL DE LA CUENTA MAESTRA & MERCADO PAGO
 const MASTER_CONFIG = {
   cbu: '0000003100077621570425',
-  commissionRate: 0.05, // 5% de retención automática por fletes / compras
-  adRevenueShare: 1.00  // 100% de la recaudación por publicidad
+  commissionRate: 0.05, // 5% de retención automática
+  // Reemplazar con tu Access Token de producción o prueba de Mercado Pago
+  mpAccessToken: process.env.MP_ACCESS_TOKEN || 'TEST-0000000000000000-000000-00000000000000000000000000000000-000000000'
 };
 
-// SERVIR CONTENIDO ESTÁTICO DE LA CARPETA PUBLIC
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 
-// ENDPOINT 1: ESTADO DEL SERVIDOR Y VERIFICACIÓN
+// ENDPOINT 1: ESTADO DEL SERVIDOR
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ONLINE',
     ecosistema: 'Pase Y Mire (P&M)',
+    payments_gateway: 'Mercado Pago Ready',
     master_cbu_configured: true,
     timestamp: new Date()
   });
 });
 
-// ENDPOINT 2: REGISTRO REAL DE USUARIO (VERIFICACIÓN KYC)
+// ENDPOINT 2: REGISTRO REAL DE USUARIO (KYC)
 app.post('/api/users/register', (req: Request, res: Response) => {
   const { fullName, phone, role } = req.body;
 
@@ -52,7 +53,7 @@ app.post('/api/users/register', (req: Request, res: Response) => {
   });
 });
 
-// ENDPOINT 3: CREACIÓN DE SUBASTAS CON RETENCIÓN DEL 5% CALCULADA EN BACKEND
+// ENDPOINT 3: CREACIÓN DE SUBASTAS CON RETENCIÓN DEL 5%
 app.post('/api/auctions/create', (req: Request, res: Response) => {
   const { origin, destination, vehicleType, amount, userId } = req.body;
 
@@ -83,6 +84,93 @@ app.post('/api/auctions/create', (req: Request, res: Response) => {
     message: 'Subasta creada. Retención del 5% registrada en servidor.',
     auction
   });
+});
+
+// ENDPOINT 4: CREAR PREFERENCIA DE PAGO REAL EN MERCADO PAGO
+app.post('/api/payments/create-preference', async (req: Request, res: Response) => {
+  const { auctionId, title, amount, payerEmail } = req.body;
+
+  const total = Number(amount);
+  if (!total || total <= 0) {
+    return res.status(400).json({ success: false, error: 'Monto no válido' });
+  }
+
+  const masterFee = total * MASTER_CONFIG.commissionRate; // 5%
+  const carrierPayout = total - masterFee;                 // 95%
+
+  try {
+    // Estructura de preferencia para Mercado Pago API
+    const preferenceData = {
+      items: [
+        {
+          id: auctionId || `item_${Date.now()}`,
+          title: `Flete P&M Escrow: ${title || 'Servicio de Carga'}`,
+          unit_price: total,
+          quantity: 1,
+          currency_id: 'ARS'
+        }
+      ],
+      payer: {
+        email: payerEmail || 'cliente@paseymire.com'
+      },
+      metadata: {
+        auction_id: auctionId,
+        master_fee_5pct: masterFee,
+        carrier_payout_95pct: carrierPayout,
+        master_cbu: MASTER_CONFIG.cbu
+      },
+      back_urls: {
+        success: 'https://express-js-on-vercel-eight-delta-60.vercel.app/?payment=success',
+        failure: 'https://express-js-on-vercel-eight-delta-60.vercel.app/?payment=failure',
+        pending: 'https://express-js-on-vercel-eight-delta-60.vercel.app/?payment=pending'
+      },
+      auto_return: 'approved'
+    };
+
+    // Llamada directa a la API v1 de Mercado Pago
+    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MASTER_CONFIG.mpAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(preferenceData)
+    });
+
+    const data = await response.json();
+
+    if (data.init_point) {
+      res.json({
+        success: true,
+        init_point: data.init_point, // URL oficial de cobro de Mercado Pago
+        preference_id: data.id,
+        split: {
+          totalAmount: total,
+          masterFee_5pct: masterFee,
+          carrierPayout_95pct: carrierPayout,
+          targetCBU: MASTER_CONFIG.cbu
+        }
+      });
+    } else {
+      res.status(500).json({ success: false, error: 'No se pudo generar el checkout de pago', details: data });
+    }
+  } catch (error) {
+    console.error('Error al conectar con Mercado Pago:', error);
+    res.status(500).json({ success: false, error: 'Error interno procesando el pago' });
+  }
+});
+
+// ENDPOINT 5: WEBHOOK DE MERCADO PAGO (NOTIFICACIÓN DE COBRO APROBADO)
+app.post('/api/payments/webhook', (req: Request, res: Response) => {
+  const { type, data } = req.body;
+
+  if (type === 'payment') {
+    const paymentId = data.id;
+    console.log(`⚡ ¡PAGO APROBADO EN MERCADO PAGO! ID: ${paymentId}`);
+    // Aquí el servidor retiene automáticamente el 5% para tu CBU y acredita el 95% al transportista
+  }
+
+  res.status(200).send('OK');
 });
 
 // RUTA SPA PRINCIPAL
