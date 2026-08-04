@@ -3,174 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase Y Mire - Ecosistema P&M Operativo</title>
+  <title>Escrow System</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; color: #f1f5f9; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-    .gold-text { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #gps-map { height: 240px; width: 100%; border-radius: 1rem; z-index: 10; }
-  </style>
 </head>
-<body class="pb-24 min-h-screen bg-slate-950 text-slate-100">
-
-  <header class="bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800/80 px-4 py-3">
-    <div class="flex justify-between items-center max-w-md mx-auto">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl gold-gradient flex items-center justify-center font-extrabold text-slate-950 text-base shadow-lg">P&M</div>
-        <h1 class="text-sm font-extrabold tracking-wide text-white">PASE Y MIRE</h1>
-      </div>
-      <div onclick="openAuthModal()" class="glass-card px-3 py-1.5 rounded-full text-xs flex items-center gap-2 cursor-pointer border border-slate-700">
-        <span id="user-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-        <span id="user-badge-text" class="font-semibold text-slate-200">Ingresar</span>
-      </div>
+<body class="bg-gray-950 text-gray-100 min-h-screen p-4 md:p-8 font-sans">
+  <div class="max-w-3xl mx-auto space-y-6">
+    <div class="border-b border-gray-800 pb-3 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-emerald-400">🛡️ Escrow System Dashboard</h1>
+      <button onclick="loadAll()" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300">🔄 Actualizar</button>
     </div>
-  </header>
 
-  <div id="admin-top-banner" class="hidden bg-slate-900 border-b border-amber-500/30 px-4 py-2 text-xs">
-    <div class="max-w-md mx-auto flex justify-between items-center text-amber-300">
-      <span class="font-mono font-bold text-[11px]">CBU MAESTRO: ...570425</span>
-      <span class="bg-amber-500/20 px-2 py-0.5 rounded text-[10px] font-bold">5% AUTO-SPLIT ON</span>
+    <!-- CREAR TRANSACCIÓN -->
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+      <h2 class="text-sm font-semibold text-gray-200">➕ Crear Nueva Orden</h2>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="buyer" placeholder="ID Comprador" class="bg-gray-800 p-2 text-xs rounded border border-gray-700 text-white outline-none">
+        <input id="seller" placeholder="ID Vendedor" class="bg-gray-800 p-2 text-xs rounded border border-gray-700 text-white outline-none">
+        <input id="amount" type="number" placeholder="Monto ($)" class="bg-gray-800 p-2 text-xs rounded border border-gray-700 text-white outline-none">
+        <input id="desc" placeholder="Descripción" class="bg-gray-800 p-2 text-xs rounded border border-gray-700 text-white outline-none">
+      </div>
+      <button onclick="createTx()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 text-xs rounded font-bold text-white">Crear Orden</button>
+    </div>
+
+    <!-- TRANSACCIONES -->
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+      <h2 class="text-sm font-semibold text-gray-200">📋 Transacciones</h2>
+      <div id="txList" class="space-y-2 text-xs">Cargando...</div>
+    </div>
+
+    <!-- DISPUTAS -->
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+      <h2 class="text-sm font-semibold text-amber-400">⚖️ Disputas</h2>
+      <div id="disputeList" class="space-y-2 text-xs">Cargando...</div>
     </div>
   </div>
 
-  <main class="max-w-md mx-auto p-4 space-y-5">
-    
-    <div id="ad-banner-container"></div>
+  <script>
+    async function loadAll() { loadTx(); loadDisputes(); }
 
-    <!-- VISTA INICIO -->
-    <div id="view-home" class="space-y-5">
-      <section class="glass-card p-5 rounded-2xl shadow-2xl border-slate-700/60">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-[11px] text-slate-400 uppercase font-bold">Billetera Escrow</span>
-          <span class="text-[10px] text-emerald-400 font-bold">Garantía P&M</span>
-        </div>
-        <span id="user-balance" class="text-3xl font-extrabold text-white tracking-tight">$ 145.000,00</span>
-        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800">
-          <button onclick="protectedAction('wallet')" class="gold-gradient text-slate-950 font-bold py-2 rounded-xl text-xs">Billetera</button>
-          <button onclick="protectedAction('simulador')" class="bg-slate-800 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700">Simulador 5%</button>
-        </div>
-      </section>
+    async function loadTx() {
+      const el = document.getElementById('txList');
+      try {
+        const r = await fetch('/api/escrow/all');
+        const d = await r.json();
+        if (!d.transactions || !d.transactions.length) {
+          el.innerHTML = '<p class="text-gray-500">Sin transacciones.</p>';
+          return;
+        }
+        el.innerHTML = d.transactions.map(t => {
+          let btns = '';
+          if (t.status === 'pending') btns += `<button onclick="pay('${t.id}')" class="bg-blue-600 px-2 py-1 rounded text-white mr-1">Acreditar Pago</button>`;
+          if (t.status === 'funded') {
+            btns += `<button onclick="complete('${t.id}')" class="bg-emerald-600 px-2 py-1 rounded text-white mr-1">Liberar Fondos</button>`;
+            btns += `<button onclick="dispute('${t.id}', '${t.buyer_id}')" class="bg-rose-600 px-2 py-1 rounded text-white">Reclamar</button>`;
+          }
+          return `<div class="bg-gray-950 p-3 rounded border border-gray-800 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-gray-200">${t.description || 'Sin descripción'} <span class="text-emerald-400">$${t.amount}</span></p>
+              <p class="text-gray-500">Estado: <strong class="text-gray-300">${t.status.toUpperCase()}</strong> | C: ${t.buyer_id} | V: ${t.seller_id}</p>
+            </div>
+            <div>${btns}</div>
+          </div>`;
+        }).join('');
+      } catch (e) { el.innerHTML = 'Error al cargar.'; }
+    }
 
-      <section class="grid grid-cols-2 gap-3">
-        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50">
-          <i class="fa-solid fa-truck-fast text-amber-400 text-lg mb-2"></i>
-          <h3 class="font-bold text-slate-100 text-sm">Subastas Fletes</h3>
-        </button>
-        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50">
-          <i class="fa-solid fa-store text-amber-400 text-lg mb-2"></i>
-          <h3 class="font-bold text-slate-100 text-sm">Marketplace</h3>
-        </button>
-      </section>
+    async function loadDisputes() {
+      const el = document.getElementById('disputeList');
+      try {
+        const r = await fetch('/api/escrow/disputes/all');
+        const d = await r.json();
+        if (!d.disputes || !d.disputes.length) {
+          el.innerHTML = '<p class="text-gray-500">Sin disputas.</p>';
+          return;
+        }
+        el.innerHTML = d.disputes.map(dp => {
+          let btns = '';
+          if (dp.status === 'open') {
+            btns = `<button onclick="resolve('${dp.id}', '${dp.transaction_id}', 'buyer')" class="bg-rose-600 px-2 py-1 rounded text-white mr-1">Reembolsar Comprador</button>` +
+                   `<button onclick="resolve('${dp.id}', '${dp.transaction_id}', 'seller')" class="bg-emerald-600 px-2 py-1 rounded text-white">Pagar Vendedor</button>`;
+          } else {
+            btns = `<span class="text-emerald-400">Ganador: ${dp.winner_role}</span>`;
+          }
+          return `<div class="bg-gray-950 p-3 rounded border border-amber-900/40 flex justify-between items-center">
+            <div><p class="font-bold text-amber-300">${dp.reason}</p><p class="text-gray-500">Por: ${dp.opened_by}</p></div>
+            <div>${btns}</div>
+          </div>`;
+        }).join('');
+      } catch (e) { el.innerHTML = 'Error al cargar disputas.'; }
+    }
 
-      <section class="glass-card p-4 rounded-2xl space-y-3">
-        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Actividad en Vivo</h2>
-        <div id="live-auction-feed" class="space-y-2"></div>
-      </section>
-    </div>
+    async function createTx() {
+      const b = document.getElementById('buyer').value;
+      const s = document.getElementById('seller').value;
+      const a = document.getElementById('amount').value;
+      const d = document.getElementById('desc').value;
+      if (!b || !s || !a) return alert('Campos incompletos');
+      await fetch('/api/escrow/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ buyer_id: b, seller_id: s, amount: a, description: d })
+      });
+      loadAll();
+    }
 
-    <!-- VISTA SUBASTAS Y FLETES -->
-    <div id="view-fletes" class="hidden space-y-5">
-      <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xs font-bold text-amber-400 uppercase flex items-center gap-2">
-            <i class="fa-solid fa-comments"></i> Chat Directo Privado (#auc_101)
-          </h3>
-          <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded">ENCRIPTADO</span>
-        </div>
-        <div id="chat-messages-box" class="h-40 overflow-y-auto bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
-          <p class="text-slate-500 text-[10px] text-center">Canal encriptado abierto. Negociación segura.</p>
-        </div>
-        <form onsubmit="sendChatMessage(event)" class="flex gap-2">
-          <input id="chat-input-text" type="text" placeholder="Escribí tu mensaje..." class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs outline-none focus:border-amber-400" required />
-          <button type="submit" class="gold-gradient text-slate-950 font-bold px-4 rounded-xl text-xs"><i class="fa-solid fa-paper-plane"></i></button>
-        </form>
-      </section>
+    async function pay(id) {
+      await fetch('/api/webhooks/payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ transaction_id: id, payment_status: 'approved' })
+      });
+      loadAll();
+    }
 
-      <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
-        <h3 class="text-xs font-bold text-slate-200 uppercase"><i class="fa-solid fa-location-crosshairs text-amber-400"></i> Radar GPS en Vivo</h3>
-        <div id="gps-map"></div>
-        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
-          <button onclick="startGPSSender()" class="bg-emerald-600 text-white font-bold py-2 rounded-xl">Emitir GPS</button>
-          <button onclick="stopGPSSender()" class="bg-slate-800 text-slate-300 font-semibold py-2 rounded-xl">Detener</button>
-        </div>
-      </section>
+    async function complete(id) {
+      await fetch('/api/escrow/status', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ transaction_id: id, status: 'completed' })
+      });
+      loadAll();
+    }
 
-      <section class="glass-card p-5 rounded-2xl space-y-3 border-emerald-500/30">
-        <h3 class="text-xs font-bold text-emerald-400 uppercase"><i class="fa-solid fa-qrcode"></i> QR Escrow de Entrega</h3>
-        <div id="qr-box" class="hidden text-center p-4 bg-slate-950 rounded-xl space-y-3 border border-slate-800">
-          <img id="qr-image" src="" class="w-40 h-40 mx-auto rounded-lg border-2 border-amber-400 p-2 bg-white" />
-          <button onclick="simulateClientQRScan()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs">Simular Escaneo y Liberar Pago</button>
-        </div>
-        <button onclick="generateEscrowQR('auc_101', 65000)" class="w-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold py-2 rounded-xl text-xs">Generar QR de Liberación (#101)</button>
-      </section>
+    async function dispute(id, buyerId) {
+      const reason = prompt('Motivo del reclamo:');
+      if (!reason) return;
+      await fetch('/api/escrow/dispute/open', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ transaction_id: id, opened_by: buyerId, reason: reason })
+      });
+      loadAll();
+    }
 
-      <section class="glass-card p-5 rounded-2xl space-y-3">
-        <h2 class="text-base font-bold text-white">Publicar Flete</h2>
-        <form onsubmit="handleCreateAuction(event)" class="space-y-3">
-          <input id="flete-origen" type="text" placeholder="Origen" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
-          <input id="flete-destino" type="text" placeholder="Destino" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
-          <input id="flete-monto" type="number" placeholder="Monto ($)" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
-          <button type="submit" class="w-full gold-gradient text-slate-950 font-bold py-2.5 rounded-xl text-xs">Iniciar Subasta</button>
-        </form>
-      </section>
-    </div>
+    async function resolve(disputeId, txId, winner) {
+      await fetch('/api/escrow/dispute/resolve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ dispute_id: disputeId, transaction_id: txId, winner_role: winner, resolution_notes: 'Resuelto por admin' })
+      });
+      loadAll();
+    }
 
-    <!-- VISTA BILLETERA -->
-    <div id="view-wallet" class="hidden space-y-5">
-      <section class="glass-card p-5 rounded-2xl">
-        <h3 class="text-lg font-bold text-white">P&M Pay Escrow</h3>
-        <p id="card-holder" class="font-mono text-xs text-amber-400 mt-2">INVITADO</p>
-      </section>
-    </div>
-
-    <!-- VISTA SIMULADOR -->
-    <div id="view-simulador" class="hidden space-y-5">
-      <section class="glass-card p-5 rounded-2xl space-y-3">
-        <h2 class="text-base font-bold text-white">Simulador Split 5%</h2>
-        <form onsubmit="runFinancialSimulation(event)" class="space-y-3">
-          <input id="sim-monto" type="number" value="100000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
-          <button type="submit" class="w-full bg-emerald-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Calcular</button>
-        </form>
-        <div id="sim-result" class="hidden p-3 bg-slate-950 rounded-xl border border-amber-500/30 text-xs"></div>
-      </section>
-    </div>
-
-    <!-- VISTA PERFIL -->
-    <div id="view-profile" class="hidden space-y-5">
-      <section class="glass-card p-5 rounded-2xl text-center space-y-3">
-        <h3 id="profile-name" class="font-bold text-slate-100">Invitado</h3>
-        <p id="profile-role" class="text-xs text-amber-400">Sin Verificar</p>
-        <div id="admin-badge" class="hidden bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs py-1 px-3 rounded-full font-bold">👑 MODO ROOT MAESTRO</div>
-        <button onclick="logout()" class="w-full text-xs text-red-400 bg-red-500/10 py-2 rounded-xl">Cerrar Sesión</button>
-      </section>
-    </div>
-
-    <!-- CONTENEDOR VISTAS AUTH -->
-    <div id="auth-view-container"></div>
-
-  </main>
-
-  <nav class="fixed bottom-0 left-0 right-0 bg-slate-950/95 border-t border-slate-800 px-2 py-2 z-30 backdrop-blur-md">
-    <div class="max-w-md mx-auto flex justify-around text-center text-xs text-slate-400">
-      <button id="nav-home" onclick="switchView('home')" class="text-amber-400 font-bold flex flex-col items-center gap-1"><i class="fa-solid fa-house text-base"></i><span class="text-[10px]">Inicio</span></button>
-      <button id="nav-fletes" onclick="protectedAction('fletes')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-truck text-base"></i><span class="text-[10px]">Subastas</span></button>
-      <button id="nav-simulador" onclick="protectedAction('simulador')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-calculator text-base"></i><span class="text-[10px]">Motor 5%</span></button>
-      <button id="nav-wallet" onclick="protectedAction('wallet')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-wallet text-base"></i><span class="text-[10px]">Billetera</span></button>
-      <button id="nav-profile" onclick="protectedAction('profile')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-user text-base"></i><span class="text-[10px]">Perfil</span></button>
-    </div>
-  </nav>
-
-  <!-- CARGA ORDENADA DE SCRIPTS MODULARES -->
-  <script src="/js/auth.js"></script>
-  <script src="/js/chat.js"></script>
-  <script src="/js/ads.js"></script>
-  <script src="/js/app.js"></script>
+    loadAll();
+  </script>
 </body>
-    </html>
-            
+  </html>
+  
