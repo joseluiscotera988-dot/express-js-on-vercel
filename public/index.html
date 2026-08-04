@@ -29,7 +29,7 @@
         <div>
           <h1 class="text-sm font-extrabold tracking-wide text-white leading-tight">PASE Y MIRE</h1>
           <p class="text-[10px] text-amber-400 font-medium flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Ecosistema v3.0 Live
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Ecosistema v3.2 Live
           </p>
         </div>
       </div>
@@ -105,9 +105,7 @@
         </div>
         <div id="live-auction-feed" class="space-y-2"></div>
       </section>
-    </div>
-
-    <!-- VISTA 2: SUBASTAS Y GPS MAPA -->
+           <!-- VISTA 2: SUBASTAS, GPS MAPA Y QR DE ENTREGA -->
     <div id="view-fletes" class="hidden space-y-5">
       <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
         <div class="flex justify-between items-center">
@@ -121,6 +119,29 @@
           <button onclick="startGPSSender()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-1"><i class="fa-solid fa-satellite-dish"></i> Emitir GPS</button>
           <button onclick="stopGPSSender()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl flex items-center justify-center gap-1"><i class="fa-solid fa-power-off"></i> Detener</button>
         </div>
+      </section>
+
+      <!-- SECCIÓN CÓDIGO QR DE LIBERACIÓN DE PAGO -->
+      <section class="glass-card p-5 rounded-2xl space-y-3 border-emerald-500/30">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-qrcode"></i> QR Escrow de Entrega Segura
+          </h3>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono font-bold">RELEASE READY</span>
+        </div>
+        <p class="text-xs text-slate-400">El transportista genera el QR al llegar; el cliente lo escanea para autorizar la liberación inmediata de los fondos.</p>
+        
+        <div id="qr-box" class="hidden text-center p-4 bg-slate-950 rounded-xl space-y-3 border border-slate-800">
+          <img id="qr-image" src="" alt="Código QR Escrow" class="w-48 h-48 mx-auto rounded-lg border-2 border-amber-400 p-2 bg-white" />
+          <p id="qr-token-text" class="text-[10px] font-mono text-amber-400 font-bold break-all"></p>
+          <button onclick="simulateClientQRScan()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> [Cliente] Simular Escaneo y Liberar Pago
+          </button>
+        </div>
+
+        <button onclick="generateEscrowQR('auc_101', 65000)" class="w-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-qrcode"></i> Generar QR de Liberación (Flete #101)
+        </button>
       </section>
 
       <section class="glass-card p-5 rounded-2xl space-y-4">
@@ -237,78 +258,7 @@
       <button id="nav-wallet" onclick="protectedAction('wallet')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-wallet text-base"></i><span class="text-[10px]">Billetera</span></button>
       <button id="nav-profile" onclick="protectedAction('profile')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-user text-base"></i><span class="text-[10px]">Perfil</span></button>
     </div>
-  </nav>
-
-  <!-- LÓGICA JAVASCRIPT COMPLETA CON GPS EN VIVO Y MERCADO PAGO -->
-  <script>
-    let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
-    let map, carrierMarker;
-    let gpsWatchId = null;
-
-    const mockFletes = [
-      { id: 'auc_101', origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
-      { id: 'auc_102', origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
-    ];
-
-    const mockTransactions = [
-      { id: 'TX-8821', concepto: 'Comisión Flete #102 (5%)', monto: '+$ 7.000,00', destino: 'Cuenta Maestra' },
-      { id: 'TX-8820', concepto: 'Banners Ads Banner #1', monto: '+$ 15.000,00', destino: 'Cuenta Maestra' }
-    ];
-
-    function initMap() {
-      if (map) return;
-      // Coordenadas por defecto San Pedro, Buenos Aires
-      map = L.map('gps-map').setView([-33.6787, -59.6647], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
-
-      carrierMarker = L.marker([-33.6787, -59.6647]).addTo(map)
-        .bindPopup('🚛 Carga / Flete en Rastreo GPS')
-        .openPopup();
-    }
-
-    function updateAuthUI() {
-      const badgeText = document.getElementById('user-badge-text');
-      const badgeDot = document.getElementById('user-status-dot');
-      const cardHolder = document.getElementById('card-holder');
-      const profileName = document.getElementById('profile-name');
-      const profileRole = document.getElementById('profile-role');
-      const adminBadge = document.getElementById('admin-badge');
-      const adminBanner = document.getElementById('admin-top-banner');
-
-      if (currentUser) {
-        if (badgeText) badgeText.innerText = currentUser.name.split(' ')[0] + ' 🟢';
-        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        if (cardHolder) cardHolder.innerText = currentUser.name;
-        if (profileName) profileName.innerText = currentUser.name;
-        if (profileRole) profileRole.innerText = currentUser.role;
-
-        if (currentUser.role === 'ADMIN_ROOT') {
-          if (adminBadge) adminBadge.classList.remove('hidden');
-          if (adminBanner) adminBanner.classList.remove('hidden');
-        } else {
-          if (adminBadge) adminBadge.classList.add('hidden');
-          if (adminBanner) adminBanner.classList.add('hidden');
-        }
-      } else {
-        if (badgeText) badgeText.innerText = 'Invitado (Ingresar)';
-        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
-        if (adminBanner) adminBanner.classList.add('hidden');
-      }
-    }
-
-    function switchView(viewName) {
-      ['home', 'fletes', 'wallet', 'profile', 'simulador'].forEach(v => {
-        const el = document.getElementById('view-' + v);
-        if (el) el.classList.add('hidden');
-        const navBtn = document.getElementById('nav-' + v);
-        if (navBtn) navBtn.classList.remove('text-amber-400', 'font-bold');
-      });
-
-      const selectedView = document.getElementById('view-' + viewName);
-      const selectedNav = document.getElementById('nav-' + viewName);
-      if (selectedView) selectedView.classList.remove('hidden');
-      if (selectedNav) selectedNav.classList.add('text-amber-400', 'font-bold');
-
-      if (viewName ===
+            </nav>
+            </div>
+  
+      
