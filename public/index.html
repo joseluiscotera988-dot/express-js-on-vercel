@@ -71,6 +71,23 @@
     </div>
 
     <div id="view-fletes" class="hidden space-y-5">
+      <!-- MÓDULO CHAT INTERNO ENCRIPTA CERRADO -->
+      <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xs font-bold text-amber-400 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-comments"></i> Chat Directo Privado (#auc_101)
+          </h3>
+          <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded">ENCRIPTADO</span>
+        </div>
+        <div id="chat-messages-box" class="h-40 overflow-y-auto bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+          <p class="text-slate-500 text-[10px] text-center">Canal encriptado abierto. Negociación segura.</p>
+        </div>
+        <form onsubmit="sendChatMessage(event)" class="flex gap-2">
+          <input id="chat-input-text" type="text" placeholder="Escribí tu mensaje..." class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs outline-none focus:border-amber-400" required />
+          <button type="submit" class="gold-gradient text-slate-950 font-bold px-4 rounded-xl text-xs"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+      </section>
+
       <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
         <h3 class="text-xs font-bold text-slate-200 uppercase"><i class="fa-solid fa-location-crosshairs text-amber-400"></i> Radar GPS en Vivo</h3>
         <div id="gps-map"></div>
@@ -124,10 +141,7 @@
         <p id="profile-role" class="text-xs text-amber-400">Sin Verificar</p>
         <div id="admin-badge" class="hidden bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs py-1 px-3 rounded-full font-bold">👑 MODO ROOT MAESTRO</div>
         <button onclick="logout()" class="w-full text-xs text-red-400 bg-red-500/10 py-2 rounded-xl">Cerrar Sesión</button>
-      </section>
-    </div>
-          </main>
-    <!-- MODAL REGISTRO KYC -->
+      </section>  <!-- MODAL REGISTRO KYC -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-card rounded-3xl p-6 w-full max-w-sm border-slate-700 space-y-4">
       <div class="flex justify-between items-center">
@@ -164,6 +178,7 @@
     let map, carrierMarker;
     let gpsWatchId = null;
     let activeReleaseToken = null;
+    let chatInterval = null;
 
     const mockFletes = [
       { id: 'auc_101', origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
@@ -220,7 +235,12 @@
       if (selectedView) selectedView.classList.remove('hidden');
       if (selectedNav) selectedNav.classList.add('text-amber-400', 'font-bold');
 
-      if (viewName === 'fletes') setTimeout(initMap, 200);
+      if (viewName === 'fletes') {
+        setTimeout(initMap, 200);
+        startChatPolling('auc_101');
+      } else {
+        if (chatInterval) clearInterval(chatInterval);
+      }
     }
 
     function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
@@ -259,6 +279,57 @@
     function protectedAction(targetView) {
       if (!currentUser) openAuthModal();
       else switchView(targetView);
+    }
+
+    // LÓGICA DE CHAT EN TIEMPO REAL
+    async function loadChatMessages(auctionId) {
+      try {
+        const res = await fetch('/api/chat/' + auctionId);
+        const data = await res.json();
+        if (data.success) {
+          const box = document.getElementById('chat-messages-box');
+          if (!box) return;
+          if (data.messages.length === 0) {
+            box.innerHTML = '<p class="text-slate-500 text-[10px] text-center">Canal encriptado abierto. Negociación segura.</p>';
+          } else {
+            box.innerHTML = data.messages.map(m => `
+              <div class="p-2 rounded-lg ${m.sender === (currentUser ? currentUser.name : 'Usuario') ? 'bg-amber-500/20 text-amber-200 text-right ml-6' : 'bg-slate-800 text-slate-200 mr-6'}">
+                <p class="text-[9px] opacity-75 font-bold">${m.sender}</p>
+                <p class="text-xs">${m.text}</p>
+              </div>
+            `).join('');
+            box.scrollTop = box.scrollHeight;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function startChatPolling(auctionId) {
+      loadChatMessages(auctionId);
+      if (chatInterval) clearInterval(chatInterval);
+      chatInterval = setInterval(() => loadChatMessages(auctionId), 3000);
+    }
+
+    async function sendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-text');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const senderName = currentUser ? currentUser.name : 'Invitado';
+
+      try {
+        const res = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auctionId: 'auc_101', sender: senderName, text: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          loadChatMessages('auc_101');
+        }
+      } catch (err) { alert('❌ Error enviando mensaje'); }
     }
 
     async function generateEscrowQR(auctionId, amount) {
@@ -388,5 +459,7 @@
   </script>
 </body>
   </html>
-  
-  
+          
+    </div>
+        </main>
+                                                                                                                                        
