@@ -18,10 +18,10 @@ const logEvent = async (supabase: any, transaction_id: string, event: string, de
   } catch (e) {}
 };
 
-// 1. DASHBOARD EN LA RAÍZ (GET /)
+// 1. DASHBOARD DE CONTROL EN LA RAÍZ (GET /)
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(`
+  res.status(200).send(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -33,8 +33,11 @@ app.get('/', (req, res) => {
 <body class="bg-gray-950 text-gray-100 min-h-screen p-4 md:p-8 font-sans">
   <div class="max-w-4xl mx-auto space-y-6">
     <div class="flex justify-between items-center border-b border-gray-800 pb-4">
-      <h1 class="text-xl font-bold text-emerald-400">🛡️ Escrow System Dashboard</h1>
-      <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">● Online</span>
+      <div>
+        <h1 class="text-xl font-bold text-emerald-400">🛡️ Escrow System Dashboard</h1>
+        <p class="text-xs text-gray-400">Panel de Control de Transacciones y Disputas</p>
+      </div>
+      <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">● Servidor Activo</span>
     </div>
 
     <!-- CREAR TRANSACCIÓN -->
@@ -52,7 +55,7 @@ app.get('/', (req, res) => {
     <!-- LISTADO -->
     <div class="bg-gray-900 p-5 rounded-xl border border-gray-800 space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-sm font-semibold text-gray-300">📋 Transacciones y Disputas</h2>
+        <h2 class="text-sm font-semibold text-gray-300">📋 Transacciones Activas</h2>
         <button onclick="loadData()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-700 text-gray-300">🔄 Actualizar</button>
       </div>
       <div id="txList" class="space-y-3">Cargando datos...</div>
@@ -75,14 +78,15 @@ app.get('/', (req, res) => {
           if (t.status === 'funded') badge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
           if (t.status === 'completed') badge = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
           if (t.status === 'disputed') badge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+          if (t.status === 'cancelled') badge = 'bg-gray-500/10 text-gray-400 border-gray-500/20';
 
           var actions = '';
           if (t.status === 'pending') {
-            actions += '<button onclick="pay(\''+t.id+'\')" class="bg-blue-600 hover:bg-blue-500 text-xs px-3 py-1.5 rounded text-white font-medium">Acreditar Pago</button>';
+            actions += '<button onclick="pay(\\\''+t.id+'\\\')" class="bg-blue-600 hover:bg-blue-500 text-xs px-3 py-1.5 rounded text-white font-medium">Acreditar Pago</button>';
           }
           if (t.status === 'funded') {
-            actions += '<button onclick="complete(\''+t.id+'\')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded text-white font-medium mr-1">Liberar</button>';
-            actions += '<button onclick="dispute(\''+t.id+'\', \''+t.buyer_id+'\')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded text-white font-medium">Reclamar</button>';
+            actions += '<button onclick="complete(\\\''+t.id+'\\\')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded text-white font-medium mr-1">Liberar</button>';
+            actions += '<button onclick="dispute(\\\''+t.id+'\\\', \\\''+t.buyer_id+'\\\')" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-1.5 rounded text-white font-medium">Reclamar</button>';
           }
 
           return '<div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">' +
@@ -156,11 +160,11 @@ app.get('/', (req, res) => {
   `);
 });
 
-// 2. OBTENER TRANSACCIONES
+// 2. RUTAS API REST COMPLETAS
 app.get('/api/escrow/all', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
     const { data, error } = await supabase.from('escrow_transactions').select('*').order('created_at', { ascending: false });
     if (error) return res.status(400).json({ error: error.message });
     return res.status(200).json({ status: 'OK', transactions: data || [] });
@@ -169,12 +173,27 @@ app.get('/api/escrow/all', async (req, res) => {
   }
 });
 
-// 3. CREAR TRANSACCIÓN
+app.get('/api/escrow/:id', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
+    const { id } = req.params;
+    const { data, error } = await supabase.from('escrow_transactions').select('*').eq('id', id).single();
+    if (error) return res.status(404).json({ error: 'Transacción no encontrada' });
+    return res.status(200).json({ status: 'OK', transaction: data });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 app.post('/api/escrow/create', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
     const { buyer_id, seller_id, amount, description } = req.body;
+    if (!buyer_id || !seller_id || !amount) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
     const { data, error } = await supabase
       .from('escrow_transactions')
       .insert([{ buyer_id, seller_id, amount: Number(amount), description, status: 'pending' }])
@@ -187,11 +206,10 @@ app.post('/api/escrow/create', async (req, res) => {
   }
 });
 
-// 4. CAMBIAR ESTADO
 app.patch('/api/escrow/status', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
     const { transaction_id, status } = req.body;
     const { data, error } = await supabase
       .from('escrow_transactions')
@@ -206,11 +224,10 @@ app.patch('/api/escrow/status', async (req, res) => {
   }
 });
 
-// 5. WEBHOOK PAGO
 app.post('/api/webhooks/payment', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
     const { transaction_id, payment_status, payment_id } = req.body;
     if (['approved', 'completed', 'paid'].includes((payment_status || '').toLowerCase())) {
       const { data, error } = await supabase
@@ -228,11 +245,10 @@ app.post('/api/webhooks/payment', async (req, res) => {
   }
 });
 
-// 6. ABRIR DISPUTA
 app.post('/api/escrow/dispute/open', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
     const { transaction_id, opened_by, reason } = req.body;
     const { data: tx, error: txError } = await supabase
       .from('escrow_transactions')
@@ -252,5 +268,50 @@ app.post('/api/escrow/dispute/open', async (req, res) => {
   }
 });
 
+app.get('/api/escrow/disputes/all', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
+    const { data, error } = await supabase.from('escrow_disputes').select('*').order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json({ status: 'OK', disputes: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+app.post('/api/escrow/dispute/resolve', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return res.status(500).json({ error: 'Configuración de Supabase no encontrada' });
+    const { dispute_id, transaction_id, winner_role, resolution_notes } = req.body;
+    const finalStatus = winner_role === 'buyer' ? 'cancelled' : 'completed';
+
+    const { data: tx, error: txError } = await supabase
+      .from('escrow_transactions')
+      .update({ status: finalStatus })
+      .eq('id', transaction_id)
+      .select();
+    if (txError) return res.status(400).json({ error: txError.message });
+
+    const { data: dispute, error: disputeError } = await supabase
+      .from('escrow_disputes')
+      .update({ 
+        status: 'resolved', 
+        winner_role, 
+        resolution_notes: resolution_notes || '',
+        resolved_at: new Date().toISOString() 
+      })
+      .eq('id', dispute_id)
+      .select();
+    if (disputeError) return res.status(400).json({ error: disputeError.message });
+
+    await logEvent(supabase, transaction_id, 'DISPUTE_RESOLVED', { winner_role, resolution_notes });
+    return res.status(200).json({ status: 'Disputa Resuelta', transaction: tx[0], dispute: dispute[0] });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 export default app;
-  
+    
