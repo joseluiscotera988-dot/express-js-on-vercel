@@ -12,7 +12,7 @@ const getSupabase = () => {
   return createClient(url, key);
 };
 
-// 1. Estado de la API
+// 1. Check de estado
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor Express activo en Vercel' });
 });
@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 app.get('/api/escrow/all', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta de Supabase' });
 
     const { data, error } = await supabase.from('escrow_transactions').select('*');
     if (error) return res.status(400).json({ error: error.message });
@@ -32,11 +32,11 @@ app.get('/api/escrow/all', async (req, res) => {
   }
 });
 
-// 3. Crear nueva transacción
+// 3. Crear nueva orden de Escrow
 app.post('/api/escrow/create', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta de Supabase' });
 
     const { buyer_id, seller_id, amount, description } = req.body;
     const { data, error } = await supabase
@@ -51,11 +51,11 @@ app.post('/api/escrow/create', async (req, res) => {
   }
 });
 
-// 4. Cambiar estado (Fondo acreditado / Liberación de fondos / Disputa)
+// 4. Cambiar estado manualmente (Liberar / Disputar / Cancelar)
 app.patch('/api/escrow/status', async (req, res) => {
   try {
     const supabase = getSupabase();
-    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta' });
+    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta de Supabase' });
 
     const { transaction_id, status } = req.body;
     const validStatuses = ['pending', 'funded', 'completed', 'disputed', 'cancelled'];
@@ -66,7 +66,7 @@ app.patch('/api/escrow/status', async (req, res) => {
 
     const { data, error } = await supabase
       .from('escrow_transactions')
-      .update({ status, updated_at: new Date() })
+      .update({ status, updated_at: new Date().toISOString() })
       .eq('id', transaction_id)
       .select();
 
@@ -77,5 +77,40 @@ app.patch('/api/escrow/status', async (req, res) => {
   }
 });
 
+// 5. Webhook de Pasarela (Acreditación Automática a 'funded')
+app.post('/api/webhooks/payment', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return res.status(500).json({ error: 'Configuración incompleta de Supabase' });
+
+    const { transaction_id, payment_status, payment_id } = req.body;
+
+    // Si el pago fue aprobado/acreditado
+    if (payment_status === 'approved' || payment_status === 'completed') {
+      const { data, error } = await supabase
+        .from('escrow_transactions')
+        .update({ 
+          status: 'funded', 
+          payment_id: payment_id || null,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', transaction_id)
+        .select();
+
+      if (error) return res.status(400).json({ error: error.message });
+
+      return res.status(200).json({ 
+        status: 'OK', 
+        message: 'Transacción financiada correctamente',
+        transaction: data[0] 
+      });
+    }
+
+    return res.status(200).json({ status: 'Ignorado', message: 'Estado de pago no requiere acción' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 export default app;
-      
+    
