@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 
 import authRoutes from './routes/auth';
 import auctionRoutes from './routes/auctions';
@@ -15,9 +14,7 @@ import adminRoutes from './routes/admin';
 const app = express();
 app.use(express.json());
 
-const publicPath = path.join(process.cwd(), 'public');
-app.use(express.static(publicPath));
-
+// Rutas de la API Backend
 app.use('/api/users', authRoutes);
 app.use('/api/auctions', auctionRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -33,8 +30,5 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ONLINE', architecture: 'Modular Clean System' });
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
-
 export default app;
+        
