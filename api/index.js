@@ -6,8 +6,8 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const app = express();
 app.use(express.json());
 
-// Servir la interfaz estática real
-app.use(express.static(path.join(__dirname, '../')));
+// Servir la carpeta public con el index.html de Pase Y Mire
+app.use(express.static(path.join(__dirname, '../public')));
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
@@ -20,7 +20,7 @@ if (MP_ACCESS_TOKEN) {
   mpClient = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
 }
 
-// Configuración pública
+// Endpoint de configuración
 app.get('/api/config', (req, res) => {
   res.json({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY });
 });
@@ -59,7 +59,7 @@ app.get('/api/orders', async (req, res) => {
   res.json(data || []);
 });
 
-// Radar Logística Choferes
+// Driver / Logística Radar
 app.get('/api/driver/available-shipments', async (req, res) => {
   const { data, error } = await supabase
     .from('orders')
@@ -84,7 +84,7 @@ app.post('/api/driver/accept-shipment', async (req, res) => {
   res.json({ success: true, order: data[0] });
 });
 
-// Admin & Disputas
+// Disputas y Admin
 app.get('/api/disputes', async (req, res) => {
   const { data, error } = await supabase.from('disputes').select('*, orders(*)').order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
@@ -120,10 +120,10 @@ app.post('/api/admin/kyc-status', async (req, res) => {
   res.json({ success: true });
 });
 
-// Capturar cualquier otra ruta y servir la app principal
+// Servir la app principal Pase Y Mire para cualquier otra ruta
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 module.exports = app;
-            
+                                               
