@@ -3,38 +3,106 @@ import supabase from '../lib/supabase';
 
 const router = Router();
 
-// Endpoint base del módulo Escrow
+// Estado del módulo
 router.get('/', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'Escrow OK',
-    message: 'Módulo de escrow activo'
-  });
+  res.json({ status: 'Escrow Engine Active' });
 });
 
-// Endpoint de prueba para verificar la conexión con Supabase
-router.get('/test-db', async (req: Request, res: Response) => {
+// 1. Crear nueva transacción en Escrow
+router.post('/create', async (req: Request, res: Response) => {
   try {
-    // Intentamos verificar la sesión/conexión básica con Supabase
-    const { data, error } = await supabase.auth.getSession();
+    const { buyer_id, seller_id, title, description, amount, currency } = req.body;
 
-    if (error) {
-      return res.status(400).json({
-        status: 'Error Supabase',
-        error: error.message
-      });
+    if (!title || !amount) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios: title y amount' });
     }
 
-    res.json({
-      status: 'OK',
-      message: 'Conexión exitosa con Supabase',
-      session: data
+    const { data, error } = await supabase
+      .from('escrow_transactions')
+      .insert([
+        {
+          buyer_id: buyer_id || null,
+          seller_id: seller_id || null,
+          title,
+          description,
+          amount,
+          currency: currency || 'ARS',
+          status: 'pending'
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+      message: 'Transacción Escrow creada exitosamente',
+      transaction: data
     });
   } catch (err: any) {
-    res.status(500).json({
-      status: 'Error interno',
-      error: err.message || 'Error al conectar con la base de datos'
+    res.status(500).json({ error: err.message || 'Error al crear la transacción' });
+  }
+});
+
+// 2. Obtener todas las transacciones
+router.get('/all', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('escrow_transactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ transactions: data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Consultar una transacción por ID
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('escrow_transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Transacción no encontrada' });
+    }
+
+    res.json({ transaction: data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Liberar fondos (Completar orden)
+router.post('/:id/release', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('escrow_transactions')
+      .update({ status: 'released', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      message: 'Fondos liberados al vendedor exitosamente',
+      transaction: data
     });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 export default router;
+        
