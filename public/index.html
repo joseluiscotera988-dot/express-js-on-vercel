@@ -3,33 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EscrowGuard - Sistema KYC, Logística y Pagos MP</title>
+  <title>EscrowGuard - Sistema Logístico y Plataforma Completa</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- SDK MERCADO PAGO -->
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
   <!-- NAVBAR -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+  <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🛡️</span>
-        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard Checkout</span>
+        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard Logística</span>
       </div>
-      <div id="nav-guest" class="flex items-center gap-3">
-        <button onclick="showAuthView('login')" class="px-4 py-2 text-sm font-medium hover:text-emerald-400 transition">Iniciar Sesión</button>
-        <button onclick="showAuthView('register')" class="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-lg transition">Registrarse</button>
+      <div id="nav-guest" class="flex gap-3">
+        <button onclick="showAuthView('login')" class="px-4 py-2 text-sm hover:text-emerald-400 transition">Iniciar Sesión</button>
+        <button onclick="showAuthView('register')" class="px-4 py-2 text-sm bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-lg transition">Registrarse</button>
       </div>
       <div id="nav-user" class="hidden flex items-center gap-4">
         <span id="user-display" class="text-xs font-mono text-emerald-400"></span>
-        <button onclick="handleLogout()" class="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition">Cerrar Sesión</button>
+        <button onclick="handleLogout()" class="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg">Cerrar Sesión</button>
       </div>
     </div>
   </header>
 
-  <!-- VISTA DE AUTENTICACIÓN -->
+  <!-- LOGIN Y REGISTRO KYC -->
   <main id="view-auth" class="max-w-xl mx-auto my-8 px-4 w-full">
     <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
       <div class="flex border-b border-slate-800 mb-6">
@@ -37,20 +36,12 @@
         <button id="tab-register-btn" onclick="showAuthView('register')" class="w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent">Registro KYC</button>
       </div>
 
-      <!-- LOGIN -->
       <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
-          <input type="email" id="login-email" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none" required />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="login-password" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none" required />
-        </div>
+        <input type="email" id="login-email" placeholder="Correo electrónico" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white" required />
+        <input type="password" id="login-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white" required />
         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Ingresar</button>
       </form>
 
-      <!-- REGISTRO KYC -->
       <form id="form-register" onsubmit="handleRegister(event)" class="hidden space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <input type="text" id="reg-nombre" placeholder="Nombre" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
@@ -66,76 +57,90 @@
           <option value="chofer_flete">Conductor Fletes / Mudanzas</option>
           <option value="chofer_remis">Conductor Remis / Traslados</option>
           <option value="mensajero">Mensajería Urbana (Moto)</option>
+          <option value="admin">Administrador</option>
         </select>
         <input type="email" id="reg-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
         <input type="password" id="reg-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Crear Cuenta</button>
       </form>
-
-      <div id="auth-msg" class="hidden mt-4 p-3 rounded-lg text-xs text-center"></div>
     </div>
   </main>
 
   <!-- DASHBOARD PRINCIPAL -->
   <main id="view-dashboard" class="hidden max-w-7xl mx-auto px-4 py-8 w-full space-y-8">
     
-    <!-- HEADER PERFIL -->
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <!-- PERFIL -->
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex justify-between items-center">
       <div>
         <h2 id="profile-name" class="text-xl font-bold text-white">Cargando...</h2>
         <p id="profile-details" class="text-xs text-slate-400 mt-1"></p>
       </div>
+      <span id="role-tag" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full uppercase">ROL</span>
     </div>
 
-    <!-- MÓDULO LOGÍSTICA & PAGO CON MERCADO PAGO -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-        <h3 class="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
-          <span>💳</span> Cotizar y Pagar con Mercado Pago
+    <!-- MÓDULO 4: PANEL CONDUCTORES / CHOFERES (LOGÍSTICA) -->
+    <div id="driver-section" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+          <span>🚚</span> Radar de Envíos & Fletes Disponibles
         </h3>
+        <button onclick="loadAvailableShipments()" class="text-xs text-slate-400 hover:text-white">🔄 Buscar Cargas</button>
+      </div>
+
+      <div id="available-shipments-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p class="text-xs text-slate-500 col-span-full text-center">Buscando viajes cercanos...</p>
+      </div>
+    </div>
+
+    <!-- PANEL DE ADMIN -->
+    <div id="admin-section" class="hidden space-y-6 border-2 border-amber-500/30 p-6 rounded-2xl bg-amber-500/5">
+      <h3 class="text-lg font-bold text-amber-400">⚡ Panel de Administrador</h3>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <h4 class="text-sm font-bold text-white mb-3">Revisión KYC</h4>
+        <div id="admin-kyc-list" class="space-y-2 text-xs">Cargando...</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <h4 class="text-sm font-bold text-white mb-3">⚖️ Disputas Activas</h4>
+        <div id="admin-disputes-list" class="space-y-2 text-xs">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- PANEL GENERAL / SOLICITAR ENVÍO -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <h3 class="text-base font-bold text-emerald-400 mb-4">💳 Cotizar Servicio & Escrow</h3>
         <form onsubmit="handleCreateOrderAndPay(event)" class="space-y-3">
-          <input type="text" id="order-title" placeholder="Producto / Servicio" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <input type="text" id="order-title" placeholder="Producto o Servicio" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
           <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="order-price" oninput="recalculate()" placeholder="Precio ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-            <input type="number" id="order-ship-cost" oninput="recalculate()" placeholder="Envío ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+            <input type="number" id="order-price" placeholder="Precio ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+            <input type="number" id="order-ship-cost" placeholder="Envío ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
           </div>
           <select id="order-ship-type" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white">
-            <option value="mensajeria">🛵 Mensajería Urbana (Moto)</option>
-            <option value="remis">🚗 Remis / Traslado Directo</option>
-            <option value="flete">🚚 Flete & Mudanza (Carga)</option>
+            <option value="mensajeria">🛵 Mensajería</option>
+            <option value="remis">🚗 Remis</option>
+            <option value="flete">🚚 Flete & Mudanza</option>
             <option value="larga_distancia">🚛 Larga Distancia</option>
           </select>
-          <input type="text" id="order-origin" placeholder="Dirección Retiro" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-          <input type="text" id="order-destination" placeholder="Dirección Entrega" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
-
-          <div class="p-3 bg-slate-950/60 rounded-lg text-xs space-y-1 text-slate-400">
-            <div class="flex justify-between"><span>Comisión Escrow (3%):</span><span id="calc-fee" class="text-emerald-400 font-mono">$0.00</span></div>
-            <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800"><span>Total a Depositar:</span><span id="calc-total" class="font-mono text-emerald-400">$0.00</span></div>
-          </div>
-
-          <button type="submit" id="pay-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg text-xs flex items-center justify-center gap-2 transition">
-            <span>🔵</span> Pagar y Congelar Fondos en MP
-          </button>
+          <input type="text" id="order-origin" placeholder="Origen" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <input type="text" id="order-destination" placeholder="Destino" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg text-xs transition">Pagar y Congelar Fondos</button>
         </form>
       </div>
 
-      <!-- TABLA DE ÓRDENES Y LIBERACIÓN POR PIN -->
       <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-        <h3 class="text-base font-bold text-white mb-4">Órdenes en Custodia MP</h3>
+        <h3 class="text-base font-bold text-white mb-4">Mis Órdenes & Transacciones</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-950 text-slate-400 uppercase">
               <tr>
                 <th class="p-3">Detalle</th>
-                <th class="p-3">Monto Total</th>
-                <th class="p-3">PIN Entrega</th>
+                <th class="p-3">PIN</th>
                 <th class="p-3">Estado</th>
                 <th class="p-3 text-right">Acción</th>
               </tr>
             </thead>
             <tbody id="orders-list" class="divide-y divide-slate-800">
-              <tr><td colspan="5" class="p-4 text-center text-slate-500">Cargando órdenes...</td></tr>
+              <tr><td colspan="4" class="p-4 text-center text-slate-500">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -146,22 +151,16 @@
   <script>
     let supabaseClient = null;
     let currentUser = null;
+    let userProfile = null;
 
     document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const res = await fetch('/api/config');
-        const config = await res.json();
-        if (config.supabaseUrl && config.supabaseKey) {
-          supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-          
-          const { data: { session } } = await supabaseClient.auth.getSession();
-          handleAuthChange(session);
-
-          supabaseClient.auth.onAuthStateChange((_e, session) => handleAuthChange(session));
-        }
-      } catch (e) {
-        console.error("Error Supabase:", e);
-      }
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+      
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      handleAuthChange(session);
+      supabaseClient.auth.onAuthStateChange((_e, s) => handleAuthChange(s));
     });
 
     function handleAuthChange(session) {
@@ -175,7 +174,6 @@
         loadProfile();
         loadOrders();
       } else {
-        currentUser = null;
         document.getElementById('view-auth').classList.remove('hidden');
         document.getElementById('view-dashboard').classList.add('hidden');
         document.getElementById('nav-guest').classList.remove('hidden');
@@ -183,71 +181,102 @@
       }
     }
 
-    function showAuthView(view) {
-      const loginForm = document.getElementById('form-login');
-      const regForm = document.getElementById('form-register');
-      if (view === 'login') {
-        loginForm.classList.remove('hidden');
-        regForm.classList.add('hidden');
-      } else {
-        loginForm.classList.add('hidden');
-        regForm.classList.remove('hidden');
-      }
+    function showAuthView(v) {
+      document.getElementById('form-login').classList.toggle('hidden', v !== 'login');
+      document.getElementById('form-register').classList.toggle('hidden', v !== 'register');
     }
 
     async function handleLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      await supabaseClient.auth.signInWithPassword({ email, password });
+      await supabaseClient.auth.signInWithPassword({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value
+      });
     }
 
     async function handleRegister(e) {
       e.preventDefault();
-      const email = document.getElementById('reg-email').value;
-      const password = document.getElementById('reg-password').value;
-      const metadata = {
-        nombre: document.getElementById('reg-nombre').value,
-        apellido: document.getElementById('reg-apellido').value,
-        dni: document.getElementById('reg-dni').value,
-        telefono: document.getElementById('reg-telefono').value,
-        direccion: document.getElementById('reg-direccion').value,
-        rol: document.getElementById('reg-rol').value
-      };
-      await supabaseClient.auth.signUp({ email, password, options: { data: metadata } });
+      await supabaseClient.auth.signUp({
+        email: document.getElementById('reg-email').value,
+        password: document.getElementById('reg-password').value,
+        options: { data: {
+          nombre: document.getElementById('reg-nombre').value,
+          apellido: document.getElementById('reg-apellido').value,
+          dni: document.getElementById('reg-dni').value,
+          telefono: document.getElementById('reg-telefono').value,
+          direccion: document.getElementById('reg-direccion').value,
+          rol: document.getElementById('reg-rol').value
+        }}
+      });
     }
 
     async function loadProfile() {
       const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
       if (data) {
+        userProfile = data;
         document.getElementById('profile-name').innerText = `${data.nombre} ${data.apellido}`;
-        document.getElementById('profile-details').innerText = `DNI: ${data.dni} | Rol: ${data.rol.toUpperCase()}`;
+        document.getElementById('profile-details').innerText = `DNI: ${data.dni} | Dirección: ${data.direccion}`;
+        document.getElementById('role-tag').innerText = data.rol.toUpperCase();
+
+        const isDriver = ['chofer_flete', 'chofer_remis', 'mensajero'].includes(data.rol);
+        if (isDriver) {
+          document.getElementById('driver-section').classList.remove('hidden');
+          loadAvailableShipments();
+        }
+
+        if (data.rol === 'admin') {
+          document.getElementById('admin-section').classList.remove('hidden');
+          loadAdminData();
+        }
       }
     }
 
-    function recalculate() {
-      const price = Number(document.getElementById('order-price').value) || 0;
-      const ship = Number(document.getElementById('order-ship-cost').value) || 0;
-      const totalBase = price + ship;
-      const fee = totalBase * 0.03;
-      document.getElementById('calc-fee').innerText = `$${fee.toFixed(2)}`;
-      document.getElementById('calc-total').innerText = `$${(totalBase + fee).toFixed(2)}`;
+    // CARGAR RADAR DE VIAJES DISPONIBLES PARA CHOFERES
+    async function loadAvailableShipments() {
+      const res = await fetch('/api/driver/available-shipments');
+      const shipments = await res.json();
+      const container = document.getElementById('available-shipments-list');
+
+      if (!shipments || shipments.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">No hay envíos pendientes de chofer en este momento.</p>`;
+        return;
+      }
+
+      container.innerHTML = shipments.map(s => `
+        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+          <div class="flex justify-between items-start">
+            <h4 class="font-bold text-white text-sm">${s.item_title}</h4>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">$${s.shipping_cost} (Ganancia Chofer)</span>
+          </div>
+          <p class="text-xs text-slate-400">📍 Origen: <b>${s.origin_address}</b></p>
+          <p class="text-xs text-slate-400">🏁 Destino: <b>${s.destination_address}</b></p>
+          <button onclick="acceptShipment('${s.id}')" class="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition">Aceptar Viaje</button>
+        </div>
+      `).join('');
     }
 
-    // GENERAR ORDEN Y ABRIR CHECKOUT MERCADO PAGO
+    async function acceptShipment(orderId) {
+      const res = await fetch('/api/driver/accept-shipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, driver_id: currentUser.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("¡Viaje Aceptado! Podés dirigirte al punto de origen.");
+        loadAvailableShipments();
+        loadOrders();
+      }
+    }
+
     async function handleCreateOrderAndPay(e) {
       e.preventDefault();
-      const payBtn = document.getElementById('pay-btn');
-      payBtn.disabled = true;
-      payBtn.innerText = "Procesando Preferencia MP...";
-
       const title = document.getElementById('order-title').value;
       const price = Number(document.getElementById('order-price').value);
       const shipCost = Number(document.getElementById('order-ship-cost').value);
       const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // 1. Guardar la orden pendiente en Supabase
-      const { data: order, error } = await supabaseClient.from('orders').insert([{
+      const { data: order } = await supabaseClient.from('orders').insert([{
         buyer_id: currentUser.id,
         item_title: title,
         item_price: price,
@@ -257,81 +286,82 @@
         origin_address: document.getElementById('order-origin').value,
         destination_address: document.getElementById('order-destination').value,
         pin_code: pin,
-        status: 'pendiente_pago'
+        status: 'fondos_retendidos'
       }]).select().single();
 
-      if (error) {
-        alert("Error al guardar la orden: " + error.message);
-        payBtn.disabled = false;
-        return;
-      }
-
-      // 2. Pedir a nuestra API la URL de Checkout de Mercado Pago
-      try {
-        const res = await fetch('/api/create-preference', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_id: order.id,
-            title: title,
-            price: price,
-            shipping_cost: shipCost
-          })
-        });
-
-        const data = await res.json();
-        if (data.init_point) {
-          // Redirigir al cliente a pagar en Mercado Pago
-          window.location.href = data.init_point;
-        } else {
-          alert("Error de Mercado Pago: " + (data.error || "Falta configurar credenciales MP"));
-          payBtn.disabled = false;
-        }
-      } catch (err) {
-        alert("Error conectando con la pasarela: " + err.message);
-        payBtn.disabled = false;
-      }
+      const res = await fetch('/api/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id, title, price, shipping_cost: shipCost })
+      });
+      const data = await res.json();
+      if (data.init_point) window.location.href = data.init_point;
     }
 
     async function loadOrders() {
       const { data: orders } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
       const tbody = document.getElementById('orders-list');
       if (!orders || orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Sin órdenes guardadas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Sin órdenes.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = orders.map(o => `
         <tr class="hover:bg-slate-900/50">
           <td class="p-3"><div class="font-bold text-white">${o.item_title}</div><div class="text-[10px] text-slate-500">${o.shipping_type.toUpperCase()}</div></td>
-          <td class="p-3 font-mono text-emerald-400">$${(o.item_price + o.shipping_cost + o.commission_3pct).toFixed(2)}</td>
           <td class="p-3 font-mono font-bold text-amber-400">${o.pin_code}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">${o.status}</span></td>
-          <td class="p-3 text-right">
-            ${o.status === 'fondos_retendidos' ? `<button onclick="releaseFunds('${o.id}')" class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded hover:bg-emerald-500/30">Liberar PIN</button>` : '-'}
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border uppercase">${o.status}</span></td>
+          <td class="p-3 text-right space-x-1">
+            ${o.status === 'fondos_retendidos' || o.status === 'chofer_asignado' || o.status === 'en_transito' ? `
+              <button onclick="releaseFunds('${o.id}')" class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded">Ingresar PIN</button>
+              <button onclick="openDispute('${o.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded">Disputar</button>
+            ` : '-'}
           </td>
         </tr>
       `).join('');
     }
 
     async function releaseFunds(id) {
-      const enteredPin = prompt("Ingrese el PIN de 6 dígitos entregado por el cliente:");
-      if (!enteredPin) return;
-
+      const pin = prompt("Ingrese PIN de entrega:");
       const { data: order } = await supabaseClient.from('orders').select('pin_code').eq('id', id).single();
-      if (order && order.pin_code === enteredPin) {
+      if (order && order.pin_code === pin) {
         await supabaseClient.from('orders').update({ status: 'entregado_liberado' }).eq('id', id);
-        alert("PIN Aceptado. Fondos liberados al Vendedor y Conductor.");
+        alert("PIN Aceptado. Fondos liberados al vendedor y al chofer.");
         loadOrders();
-      } else {
-        alert("PIN Incorrecto.");
-      }
+      } else { alert("PIN incorrecto."); }
     }
 
-    async function handleLogout() {
-      await supabaseClient.auth.signOut();
+    async function openDispute(orderId) {
+      const reason = prompt("Motivo de la disputa:");
+      if (!reason) return;
+      await fetch('/api/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, complainant_id: currentUser.id, reason })
+      });
+      alert("Disputa registrada.");
+      loadOrders();
     }
-  </script>
-</body>
-  </html>
-              
+
+    async function loadAdminData() {
+      const resKyc = await fetch('/api/admin/kyc-docs');
+      const kycDocs = await resKyc.json();
+      document.getElementById('admin-kyc-list').innerHTML = kycDocs.length ? kycDocs.map(d => `
+        <div class="flex justify-between items-center bg-slate-950 p-2 rounded">
+          <div><b>${d.profiles?.nombre || 'Usuario'}</b> - Tipo: ${d.doc_type} (${d.status})</div>
+          <div class="space-x-1">
+            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'aprobado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Aprobar</button>
+            <button onclick="updateKyc('${d.id}', '${d.user_id}', 'rechazado')" class="px-2 py-1 bg-red-600 text-white rounded">Rechazar</button>
+          </div>
+        </div>
+      `).join('') : '<p class="text-slate-500">Sin documentos pendientes.</p>';
+
+      const resDisp = await fetch('/api/disputes');
+      const disputes = await resDisp.json();
+      document.getElementById('admin-disputes-list').innerHTML = disputes.length ? disputes.map(disp => `
+        <div class="bg-slate-950 p-3 rounded space-y-2">
+          <div><b>Orden #${disp.order_id}</b> | Motivo: ${disp.reason}</div>
+          ${disp.status === 'abierta' ? `
+            <div class="space-x-2">
+              <button onclick="resolveDispute('${disp.id}', '${disp.order_id}', 'entregado_liberado')" class="px-2 py-1 bg-emerald-600 text-white rounded">Liberar</button>
+              <button on
