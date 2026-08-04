@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EscrowGuard - Sistema KYC & Logística</title>
+  <title>EscrowGuard - Sistema KYC, Logística y Pagos MP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SDK MERCADO PAGO -->
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
@@ -14,7 +16,7 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🛡️</span>
-        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard KYC</span>
+        <span class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">EscrowGuard Checkout</span>
       </div>
       <div id="nav-guest" class="flex items-center gap-3">
         <button onclick="showAuthView('login')" class="px-4 py-2 text-sm font-medium hover:text-emerald-400 transition">Iniciar Sesión</button>
@@ -35,62 +37,38 @@
         <button id="tab-register-btn" onclick="showAuthView('register')" class="w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent">Registro KYC</button>
       </div>
 
-      <!-- FORMULARIO LOGIN -->
+      <!-- LOGIN -->
       <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
-          <input type="email" id="login-email" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+          <input type="email" id="login-email" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none" required />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="login-password" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:border-emerald-500 focus:outline-none" required />
+          <input type="password" id="login-password" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-sm text-white focus:outline-none" required />
         </div>
         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Ingresar</button>
       </form>
 
-      <!-- FORMULARIO REGISTRO KYC -->
+      <!-- REGISTRO KYC -->
       <form id="form-register" onsubmit="handleRegister(event)" class="hidden space-y-4">
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Nombre</label>
-            <input type="text" id="reg-nombre" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Apellido</label>
-            <input type="text" id="reg-apellido" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          </div>
+          <input type="text" id="reg-nombre" placeholder="Nombre" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+          <input type="text" id="reg-apellido" placeholder="Apellido" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">DNI / Documento</label>
-            <input type="text" id="reg-dni" placeholder="Sin puntos" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Teléfono Móvil</label>
-            <input type="tel" id="reg-telefono" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-          </div>
+          <input type="text" id="reg-dni" placeholder="DNI" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+          <input type="tel" id="reg-telefono" placeholder="Teléfono" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
         </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Dirección Legal</label>
-          <input type="text" id="reg-direccion" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Rol de Usuario</label>
-          <select id="reg-rol" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white">
-            <option value="cliente">Comprador / Vendedor</option>
-            <option value="chofer_flete">Conductor Fletes / Mudanzas</option>
-            <option value="chofer_remis">Conductor Remis / Traslados</option>
-            <option value="mensajero">Mensajería Urbana (Moto)</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Email</label>
-          <input type="email" id="reg-email" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="reg-password" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
-        </div>
+        <input type="text" id="reg-direccion" placeholder="Dirección Legal" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+        <select id="reg-rol" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white">
+          <option value="cliente">Comprador / Vendedor</option>
+          <option value="chofer_flete">Conductor Fletes / Mudanzas</option>
+          <option value="chofer_remis">Conductor Remis / Traslados</option>
+          <option value="mensajero">Mensajería Urbana (Moto)</option>
+        </select>
+        <input type="email" id="reg-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
+        <input type="password" id="reg-password" placeholder="Contraseña" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-sm text-white" required />
         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold p-3 rounded-lg transition">Crear Cuenta</button>
       </form>
 
@@ -101,88 +79,73 @@
   <!-- DASHBOARD PRINCIPAL -->
   <main id="view-dashboard" class="hidden max-w-7xl mx-auto px-4 py-8 w-full space-y-8">
     
-    <!-- HEADER DEL PERFIL CON ESTADO KYC -->
+    <!-- HEADER PERFIL -->
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <h2 id="profile-name" class="text-xl font-bold text-white">Cargando perfil...</h2>
+        <h2 id="profile-name" class="text-xl font-bold text-white">Cargando...</h2>
         <p id="profile-details" class="text-xs text-slate-400 mt-1"></p>
-        <div class="flex items-center gap-2 mt-2">
-          <span id="profile-kyc" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">KYC Pendiente</span>
-          <span id="profile-role-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Rol</span>
-        </div>
       </div>
     </div>
 
-    <!-- MÓDULO 1: SUBIDA REAL DE DOCUMENTACIÓN KYC -->
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-      <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
-        <div>
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <span>📄</span> Verificación de Identidad (Subida KYC)
-          </h3>
-          <p class="text-xs text-slate-400">Subí fotos claras de tus documentos oficiales. Archivos soportados: JPG, PNG o PDF (máx 5MB).</p>
-        </div>
-        <button onclick="loadKycDocs()" class="text-xs text-slate-400 hover:text-white">🔄 Refrescar Documentos</button>
-      </div>
-
-      <div id="kyc-upload-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <!-- CARD: DNI FRENTE -->
-        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between space-y-3">
-          <div>
-            <h4 class="text-xs font-bold text-white mb-1">1. DNI (Frente)</h4>
-            <span id="status-dni_frente" class="text-[10px] text-slate-500 font-semibold">No cargado</span>
-          </div>
-          <input type="file" id="file-dni_frente" accept="image/*,application/pdf" class="hidden" onchange="uploadDocument('dni_frente', this.files[0])" />
-          <button onclick="document.getElementById('file-dni_frente').click()" id="btn-dni_frente" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded-lg border border-slate-700 transition">Seleccionar Archivo</button>
-        </div>
-
-        <!-- CARD: DNI DORSO -->
-        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between space-y-3">
-          <div>
-            <h4 class="text-xs font-bold text-white mb-1">2. DNI (Dorso)</h4>
-            <span id="status-dni_dorso" class="text-[10px] text-slate-500 font-semibold">No cargado</span>
-          </div>
-          <input type="file" id="file-dni_dorso" accept="image/*,application/pdf" class="hidden" onchange="uploadDocument('dni_dorso', this.files[0])" />
-          <button onclick="document.getElementById('file-dni_dorso').click()" id="btn-dni_dorso" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded-lg border border-slate-700 transition">Seleccionar Archivo</button>
-        </div>
-
-        <!-- CARD: LICENCIA (SOLO PARA CHOFERES/MENSAJEROS) -->
-        <div id="card-licencia" class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between space-y-3">
-          <div>
-            <h4 class="text-xs font-bold text-white mb-1">3. Licencia Conducir</h4>
-            <span id="status-licencia" class="text-[10px] text-slate-500 font-semibold">No cargado</span>
-          </div>
-          <input type="file" id="file-licencia" accept="image/*,application/pdf" class="hidden" onchange="uploadDocument('licencia', this.files[0])" />
-          <button onclick="document.getElementById('file-licencia').click()" id="btn-licencia" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded-lg border border-slate-700 transition">Seleccionar Archivo</button>
-        </div>
-
-        <!-- CARD: SEGURO VEHÍCULO (SOLO PARA CHOFERES/MENSAJEROS) -->
-        <div id="card-seguro" class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between space-y-3">
-          <div>
-            <h4 class="text-xs font-bold text-white mb-1">4. Seguro del Vehículo</h4>
-            <span id="status-seguro_vehiculo" class="text-[10px] text-slate-500 font-semibold">No cargado</span>
-          </div>
-          <input type="file" id="file-seguro_vehiculo" accept="image/*,application/pdf" class="hidden" onchange="uploadDocument('seguro_vehiculo', this.files[0])" />
-          <button onclick="document.getElementById('file-seguro_vehiculo').click()" id="btn-seguro_vehiculo" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded-lg border border-slate-700 transition">Seleccionar Archivo</button>
-        </div>
-
-      </div>
+    <!-- MÓDULO LOGÍSTICA & PAGO CON MERCADO PAGO -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <div id="kyc-general-msg" class="hidden p-3 rounded-lg text-xs text-center font-semibold"></div>
-    </div>
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <h3 class="text-base font-bold text-emerald-400 mb-4 flex items-center gap-2">
+          <span>💳</span> Cotizar y Pagar con Mercado Pago
+        </h3>
+        <form onsubmit="handleCreateOrderAndPay(event)" class="space-y-3">
+          <input type="text" id="order-title" placeholder="Producto / Servicio" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="order-price" oninput="recalculate()" placeholder="Precio ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+            <input type="number" id="order-ship-cost" oninput="recalculate()" placeholder="Envío ($)" class="bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          </div>
+          <select id="order-ship-type" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white">
+            <option value="mensajeria">🛵 Mensajería Urbana (Moto)</option>
+            <option value="remis">🚗 Remis / Traslado Directo</option>
+            <option value="flete">🚚 Flete & Mudanza (Carga)</option>
+            <option value="larga_distancia">🚛 Larga Distancia</option>
+          </select>
+          <input type="text" id="order-origin" placeholder="Dirección Retiro" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
+          <input type="text" id="order-destination" placeholder="Dirección Entrega" class="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs text-white" required />
 
+          <div class="p-3 bg-slate-950/60 rounded-lg text-xs space-y-1 text-slate-400">
+            <div class="flex justify-between"><span>Comisión Escrow (3%):</span><span id="calc-fee" class="text-emerald-400 font-mono">$0.00</span></div>
+            <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800"><span>Total a Depositar:</span><span id="calc-total" class="font-mono text-emerald-400">$0.00</span></div>
+          </div>
+
+          <button type="submit" id="pay-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg text-xs flex items-center justify-center gap-2 transition">
+            <span>🔵</span> Pagar y Congelar Fondos en MP
+          </button>
+        </form>
+      </div>
+
+      <!-- TABLA DE ÓRDENES Y LIBERACIÓN POR PIN -->
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <h3 class="text-base font-bold text-white mb-4">Órdenes en Custodia MP</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Detalle</th>
+                <th class="p-3">Monto Total</th>
+                <th class="p-3">PIN Entrega</th>
+                <th class="p-3">Estado</th>
+                <th class="p-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="orders-list" class="divide-y divide-slate-800">
+              <tr><td colspan="5" class="p-4 text-center text-slate-500">Cargando órdenes...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-    © 2026 EscrowGuard - Módulo KYC de Verificación de Archivos.
-  </footer>
-
-  <!-- LÓGICA DE SUBIDA DE ARCHIVOS A SUPABASE STORAGE -->
   <script>
     let supabaseClient = null;
     let currentUser = null;
-    let userProfile = null;
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
@@ -197,7 +160,7 @@
           supabaseClient.auth.onAuthStateChange((_e, session) => handleAuthChange(session));
         }
       } catch (e) {
-        console.error("Error inicializando Supabase:", e);
+        console.error("Error Supabase:", e);
       }
     });
 
@@ -210,6 +173,7 @@
         document.getElementById('nav-user').classList.remove('hidden');
         document.getElementById('user-display').innerText = currentUser.email;
         loadProfile();
+        loadOrders();
       } else {
         currentUser = null;
         document.getElementById('view-auth').classList.remove('hidden');
@@ -222,27 +186,24 @@
     function showAuthView(view) {
       const loginForm = document.getElementById('form-login');
       const regForm = document.getElementById('form-register');
-      const loginBtn = document.getElementById('tab-login-btn');
-      const regBtn = document.getElementById('tab-register-btn');
-
       if (view === 'login') {
         loginForm.classList.remove('hidden');
         regForm.classList.add('hidden');
-        loginBtn.className = "w-1/2 py-3 text-center font-bold border-b-2 border-emerald-500 text-emerald-400";
-        regBtn.className = "w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent";
       } else {
         loginForm.classList.add('hidden');
         regForm.classList.remove('hidden');
-        regBtn.className = "w-1/2 py-3 text-center font-bold border-b-2 border-emerald-500 text-emerald-400";
-        loginBtn.className = "w-1/2 py-3 text-center font-bold text-slate-500 border-b-2 border-transparent";
       }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      await supabaseClient.auth.signInWithPassword({ email, password });
     }
 
     async function handleRegister(e) {
       e.preventDefault();
-      const msg = document.getElementById('auth-msg');
-      msg.classList.add('hidden');
-
       const email = document.getElementById('reg-email').value;
       const password = document.getElementById('reg-password').value;
       const metadata = {
@@ -253,134 +214,124 @@
         direccion: document.getElementById('reg-direccion').value,
         rol: document.getElementById('reg-rol').value
       };
-
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: { data: metadata }
-      });
-
-      if (error) {
-        msg.className = "mt-4 p-3 rounded-lg text-xs text-center bg-red-500/10 text-red-400 border border-red-500/20";
-        msg.innerText = error.message;
-        msg.classList.remove('hidden');
-      } else {
-        msg.className = "mt-4 p-3 rounded-lg text-xs text-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-        msg.innerText = "¡Registro exitoso! Ya podés ingresar.";
-        msg.classList.remove('hidden');
-      }
+      await supabaseClient.auth.signUp({ email, password, options: { data: metadata } });
     }
 
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      const msg = document.getElementById('auth-msg');
-
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        msg.className = "mt-4 p-3 rounded-lg text-xs text-center bg-red-500/10 text-red-400 border border-red-500/20";
-        msg.innerText = error.message;
-        msg.classList.remove('hidden');
-      }
-    }
-
-    // CARGAR PERFIL Y ADAPTAR VISTA SEGÚN ROL
     async function loadProfile() {
       const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
       if (data) {
-        userProfile = data;
         document.getElementById('profile-name').innerText = `${data.nombre} ${data.apellido}`;
-        document.getElementById('profile-details').innerText = `DNI: ${data.dni} | Teléfono: ${data.telefono} | Dirección: ${data.direccion}`;
-        document.getElementById('profile-role-badge').innerText = data.rol.toUpperCase();
-
-        const kycBadge = document.getElementById('profile-kyc');
-        kycBadge.innerText = `KYC: ${data.kyc_status.toUpperCase()}`;
-
-        // Mostrar / Ocultar requerimiento de licencia y seguro según el rol
-        const isDriver = ['chofer_flete', 'chofer_remis', 'mensajero'].includes(data.rol);
-        document.getElementById('card-licencia').style.display = isDriver ? 'flex' : 'none';
-        document.getElementById('card-seguro').style.display = isDriver ? 'flex' : 'none';
-
-        loadKycDocs();
+        document.getElementById('profile-details').innerText = `DNI: ${data.dni} | Rol: ${data.rol.toUpperCase()}`;
       }
     }
 
-    // SUBIDA REAL DE DOCUMENTOS A SUPABASE STORAGE
-    async function uploadDocument(docType, file) {
-      if (!file) return;
+    function recalculate() {
+      const price = Number(document.getElementById('order-price').value) || 0;
+      const ship = Number(document.getElementById('order-ship-cost').value) || 0;
+      const totalBase = price + ship;
+      const fee = totalBase * 0.03;
+      document.getElementById('calc-fee').innerText = `$${fee.toFixed(2)}`;
+      document.getElementById('calc-total').innerText = `$${(totalBase + fee).toFixed(2)}`;
+    }
 
-      const btn = document.getElementById(`btn-${docType}`);
-      const statusSpan = document.getElementById(`status-${docType}`);
-      const generalMsg = document.getElementById('kyc-general-msg');
+    // GENERAR ORDEN Y ABRIR CHECKOUT MERCADO PAGO
+    async function handleCreateOrderAndPay(e) {
+      e.preventDefault();
+      const payBtn = document.getElementById('pay-btn');
+      payBtn.disabled = true;
+      payBtn.innerText = "Procesando Preferencia MP...";
 
-      btn.disabled = true;
-      btn.innerText = "Subiendo...";
-      statusSpan.className = "text-[10px] text-amber-400 font-semibold";
-      statusSpan.innerText = "Enviando archivo...";
+      const title = document.getElementById('order-title').value;
+      const price = Number(document.getElementById('order-price').value);
+      const shipCost = Number(document.getElementById('order-ship-cost').value);
+      const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
+      // 1. Guardar la orden pendiente en Supabase
+      const { data: order, error } = await supabaseClient.from('orders').insert([{
+        buyer_id: currentUser.id,
+        item_title: title,
+        item_price: price,
+        commission_3pct: (price + shipCost) * 0.03,
+        shipping_cost: shipCost,
+        shipping_type: document.getElementById('order-ship-type').value,
+        origin_address: document.getElementById('order-origin').value,
+        destination_address: document.getElementById('order-destination').value,
+        pin_code: pin,
+        status: 'pendiente_pago'
+      }]).select().single();
+
+      if (error) {
+        alert("Error al guardar la orden: " + error.message);
+        payBtn.disabled = false;
+        return;
+      }
+
+      // 2. Pedir a nuestra API la URL de Checkout de Mercado Pago
       try {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${currentUser.id}/${docType}_${Date.now()}.${fileExt}`;
+        const res = await fetch('/api/create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: order.id,
+            title: title,
+            price: price,
+            shipping_cost: shipCost
+          })
+        });
 
-        // 1. Subir archivo físico a Storage Bucket 'kyc-documents'
-        const { error: uploadError } = await supabaseClient
-          .storage
-          .from('kyc-documents')
-          .upload(filePath, file, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        // 2. Insertar o actualizar registro en la tabla kyc_documents
-        const { error: dbError } = await supabaseClient
-          .from('kyc_documents')
-          .insert([
-            {
-              user_id: currentUser.id,
-              doc_type: docType,
-              file_path: filePath,
-              status: 'pendiente'
-            }
-          ]);
-
-        if (dbError) throw dbError;
-
-        // 3. Actualizar estado del perfil a 'pendiente' de revisión
-        await supabaseClient
-          .from('profiles')
-          .update({ kyc_status: 'pendiente' })
-          .eq('id', currentUser.id);
-
-        statusSpan.className = "text-[10px] text-emerald-400 font-semibold";
-        statusSpan.innerText = "✓ Cargado (Pendiente revisión)";
-        btn.innerText = "Reemplazar Archivo";
-        btn.disabled = false;
-
-        generalMsg.className = "p-3 rounded-lg text-xs text-center font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-        generalMsg.innerText = "Documento subido con éxito y registrado en el sistema de auditoría.";
-        generalMsg.classList.remove('hidden');
-
+        const data = await res.json();
+        if (data.init_point) {
+          // Redirigir al cliente a pagar en Mercado Pago
+          window.location.href = data.init_point;
+        } else {
+          alert("Error de Mercado Pago: " + (data.error || "Falta configurar credenciales MP"));
+          payBtn.disabled = false;
+        }
       } catch (err) {
-        console.error("Error subiendo documento:", err);
-        statusSpan.className = "text-[10px] text-red-400 font-semibold";
-        statusSpan.innerText = "✕ Error al subir";
-        btn.innerText = "Reintentar Subida";
-        btn.disabled = false;
-
-        generalMsg.className = "p-3 rounded-lg text-xs text-center font-semibold bg-red-500/10 text-red-400 border border-red-500/20";
-        generalMsg.innerText = "Error al subir el archivo: " + err.message;
-        generalMsg.classList.remove('hidden');
+        alert("Error conectando con la pasarela: " + err.message);
+        payBtn.disabled = false;
       }
     }
 
-    // CONSULTAR DOCUMENTOS CARGADOS DEL USUARIO
-    async function loadKycDocs() {
-      const { data: docs } = await supabaseClient
-        .from('kyc_documents')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
+    async function loadOrders() {
+      const { data: orders } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+      const tbody = document.getElementById('orders-list');
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Sin órdenes guardadas.</td></tr>`;
+        return;
+      }
 
-      if (docs && docs.length > 0) {
-        // Mapear los más recientes por doc_type
-        const types = ['dni_frente', 'dni_dorso', 'li
+      tbody.innerHTML = orders.map(o => `
+        <tr class="hover:bg-slate-900/50">
+          <td class="p-3"><div class="font-bold text-white">${o.item_title}</div><div class="text-[10px] text-slate-500">${o.shipping_type.toUpperCase()}</div></td>
+          <td class="p-3 font-mono text-emerald-400">$${(o.item_price + o.shipping_cost + o.commission_3pct).toFixed(2)}</td>
+          <td class="p-3 font-mono font-bold text-amber-400">${o.pin_code}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">${o.status}</span></td>
+          <td class="p-3 text-right">
+            ${o.status === 'fondos_retendidos' ? `<button onclick="releaseFunds('${o.id}')" class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded hover:bg-emerald-500/30">Liberar PIN</button>` : '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function releaseFunds(id) {
+      const enteredPin = prompt("Ingrese el PIN de 6 dígitos entregado por el cliente:");
+      if (!enteredPin) return;
+
+      const { data: order } = await supabaseClient.from('orders').select('pin_code').eq('id', id).single();
+      if (order && order.pin_code === enteredPin) {
+        await supabaseClient.from('orders').update({ status: 'entregado_liberado' }).eq('id', id);
+        alert("PIN Aceptado. Fondos liberados al Vendedor y Conductor.");
+        loadOrders();
+      } else {
+        alert("PIN Incorrecto.");
+      }
+    }
+
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+    }
+  </script>
+</body>
+  </html>
+              
