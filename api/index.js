@@ -1,9 +1,15 @@
 const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+
 const app = express();
+app.use(express.json());
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// SERVIR LA NUEVA PORTADA / LOGIN
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -214,7 +220,7 @@ app.get('/', (req, res) => {
           errorDiv.innerText = error.message;
           errorDiv.classList.remove('hidden');
         } else {
-          successDiv.innerText = "¡Registro exitoso! Revisa tu email para confirmar o inicia sesión.";
+          successDiv.innerText = "¡Registro exitoso! Ya podés iniciar sesión.";
           successDiv.classList.remove('hidden');
         }
       }
@@ -230,3 +236,4 @@ app.get('/', (req, res) => {
 });
 
 module.exports = app;
+      
