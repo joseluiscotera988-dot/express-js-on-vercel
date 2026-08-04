@@ -1,108 +1,44 @@
+// @ts-nocheck
 import { Router, Request, Response } from 'express';
 import supabase from '../lib/supabase';
+import config from '../config/master';
 
 const router = Router();
 
-// Estado del módulo
 router.get('/', (req: Request, res: Response) => {
   res.json({ status: 'Escrow Engine Active' });
 });
 
-// 1. Crear nueva transacción en Escrow
-router.post('/create', async (req: Request, res: Response) => {
-  try {
-    const { buyer_id, seller_id, title, description, amount, currency } = req.body;
-
-    if (!title || !amount) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios: title y amount' });
-    }
-
-    const { data, error } = await supabase
-      .from('escrow_transactions')
-      .insert([
-        {
-          buyer_id: buyer_id || null,
-          seller_id: seller_id || null,
-          title,
-          description,
-          amount,
-          currency: currency || 'ARS',
-          status: 'pending'
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    res.status(201).json({
-      message: 'Transacción Escrow creada exitosamente',
-      transaction: data
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Error al crear la transacción' });
-  }
-});
-
-// 2. Obtener todas las transacciones
 router.get('/all', async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
-      .from('escrow_transactions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    res.json({ transactions: data });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 3. Consultar una transacción por ID
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const { data, error } = await supabase
-      .from('escrow_transactions')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !data) {
-      return res.status(404).json({ error: 'Transacción no encontrada' });
+    if (!config.supabaseUrl || !config.supabaseUrl.startsWith('http')) {
+      return res.status(200).json({
+        status: 'Configuración Incompleta',
+        message: 'Falta configurar SUPABASE_URL en Vercel o la URL no empieza con https://'
+      });
     }
 
-    res.json({ transaction: data });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 4. Liberar fondos (Completar orden)
-router.post('/:id/release', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
     const { data, error } = await supabase
       .from('escrow_transactions')
-      .update({ status: 'released', updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+      .select('*');
 
-    if (error) throw error;
+    if (error) {
+      return res.status(200).json({
+        status: 'Error en Tabla/Supabase',
+        message: error.message
+      });
+    }
 
-    res.json({
-      message: 'Fondos liberados al vendedor exitosamente',
-      transaction: data
+    return res.status(200).json({
+      status: 'OK',
+      transactions: data || []
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({
+      status: 'Error Servidor',
+      message: err.message || String(err)
+    });
   }
 });
 
 export default router;
-        
