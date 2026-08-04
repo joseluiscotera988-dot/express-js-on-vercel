@@ -260,5 +260,309 @@
     </div>
             </nav>
             </div>
+    <!-- LÓGICA JAVASCRIPT CON QR ESCROW, GPS Y MERCADO PAGO -->
+  <script>
+    let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
+    let map, carrierMarker;
+    let gpsWatchId = null;
+    let activeReleaseToken = null;
+
+    const mockFletes = [
+      { id: 'auc_101', origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
+      { id: 'auc_102', origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
+    ];
+
+    const mockTransactions = [
+      { id: 'TX-8821', concepto: 'Comisión Flete #102 (5%)', monto: '+$ 7.000,00', destino: 'Cuenta Maestra' },
+      { id: 'TX-8820', concepto: 'Banners Ads Banner #1', monto: '+$ 15.000,00', destino: 'Cuenta Maestra' }
+    ];
+
+    function initMap() {
+      if (map) return;
+      map = L.map('gps-map').setView([-33.6787, -59.6647], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      carrierMarker = L.marker([-33.6787, -59.6647]).addTo(map)
+        .bindPopup('🚛 Carga / Flete en Rastreo GPS')
+        .openPopup();
+    }
+
+    function updateAuthUI() {
+      const badgeText = document.getElementById('user-badge-text');
+      const badgeDot = document.getElementById('user-status-dot');
+      const cardHolder = document.getElementById('card-holder');
+      const profileName = document.getElementById('profile-name');
+      const profileRole = document.getElementById('profile-role');
+      const adminBadge = document.getElementById('admin-badge');
+      const adminBanner = document.getElementById('admin-top-banner');
+
+      if (currentUser) {
+        if (badgeText) badgeText.innerText = currentUser.name.split(' ')[0] + ' 🟢';
+        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (cardHolder) cardHolder.innerText = currentUser.name;
+        if (profileName) profileName.innerText = currentUser.name;
+        if (profileRole) profileRole.innerText = currentUser.role;
+
+        if (currentUser.role === 'ADMIN_ROOT') {
+          if (adminBadge) adminBadge.classList.remove('hidden');
+          if (adminBanner) adminBanner.classList.remove('hidden');
+        } else {
+          if (adminBadge) adminBadge.classList.add('hidden');
+          if (adminBanner) adminBanner.classList.add('hidden');
+        }
+      } else {
+        if (badgeText) badgeText.innerText = 'Invitado (Ingresar)';
+        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        if (adminBanner) adminBanner.classList.add('hidden');
+      }
+    }
+
+    function switchView(viewName) {
+      ['home', 'fletes', 'wallet', 'profile', 'simulador'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.classList.add('hidden');
+        const navBtn = document.getElementById('nav-' + v);
+        if (navBtn) navBtn.classList.remove('text-amber-400', 'font-bold');
+      });
+
+      const selectedView = document.getElementById('view-' + viewName);
+      const selectedNav = document.getElementById('nav-' + viewName);
+      if (selectedView) selectedView.classList.remove('hidden');
+      if (selectedNav) selectedNav.classList.add('text-amber-400', 'font-bold');
+
+      if (viewName === 'fletes') {
+        setTimeout(initMap, 200);
+      }
+    }
+
+    function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+    function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const phone = document.getElementById('reg-phone').value;
+      const role = document.getElementById('reg-role').value;
+
+      try {
+        const res = await fetch('/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: name, phone: phone, role: role })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser = { id: data.user.id, name: data.user.fullName, phone: data.user.phone, role: data.user.role };
+          localStorage.setItem('pm_user', JSON.stringify(currentUser));
+          updateAuthUI();
+          closeAuthModal();
+          alert('🎉 Identidad verificada mediante KYC.\nID: ' + data.user.id);
+        }
+      } catch (err) { alert('❌ Error en el registro KYC'); }
+    }
+
+    function logout() {
+      localStorage.removeItem('pm_user');
+      currentUser = null;
+      updateAuthUI();
+      switchView('home');
+    }
+
+    function protectedAction(targetView) {
+      if (!currentUser) openAuthModal();
+      else switchView(targetView);
+    }
+
+    // GENERAR Y ESCANEAR CÓDIGO QR ESCROW
+    async function generateEscrowQR(auctionId, amount) {
+      try {
+        const res = await fetch('/api/escrow/generate-qr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auctionId, amount })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          activeReleaseToken = data.releaseToken;
+          document.getElementById('qr-box').classList.remove('hidden');
+          document.getElementById('qr-image').src = data.qrDataUrl;
+          document.getElementById('qr-token-text').innerText = `TOKEN: ${data.releaseToken}`;
+          alert(`📲 QR de Liberación generado para Flete ${auctionId}.\n• Pago Transportista (95%): $${data.details.carrierPayout_95.toLocaleString()}\n• Retención CBU (5%): $${data.details.masterFee_5.toLocaleString()}`);
+        }
+      } catch (err) { alert('❌ Error generando código QR'); }
+    }
+
+    async function simulateClientQRScan() {
+      if (!activeReleaseToken) return alert('❌ No hay ningún QR activo.');
+
+      try {
+        const res = await fetch('/api/escrow/release', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ releaseToken: activeReleaseToken })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`🎉 ¡ENTREGA CONFIRMADA!\n${data.message}\n\n• Transferido a Transportista: $${data.releaseDetails.amountReleasedToCarrier.toLocaleString()}\n• Retenido a CBU Maestro: $${data.releaseDetails.masterCommissionTransferred.toLocaleString()}`);
+          document.getElementById('qr-box').classList.add('hidden');
+          activeReleaseToken = null;
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      } catch (err) { alert('❌ Error de comunicación al liberar pago.'); }
+    }
+
+    // PAGAR CON MERCADO PAGO
+    async function payWithMercadoPago(auctionId, title, amount) {
+      if (!currentUser) return openAuthModal();
+
+      try {
+        const userEmail = `${currentUser.phone.replace(/[^0-9]/g, '')}@paseymire.com`;
+        const res = await fetch('/api/payments/create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auctionId, title, amount, payerEmail: userEmail })
+        });
+        const data = await res.json();
+
+        if (data.success && data.init_point) {
+          alert(`⚡ Redirigiendo a Mercado Pago...\n• Total: $${data.split.totalAmount.toLocaleString()}\n• 5% Retención CBU: $${data.split.masterFee_5pct.toLocaleString()}\n• Fondo Escrow: $${data.split.carrierPayout_95pct.toLocaleString()}`);
+          window.location.href = data.init_point;
+        } else {
+          alert('❌ Error al generar preferencia de pago.');
+        }
+      } catch (err) { alert('❌ Error conectando con Mercado Pago.'); }
+    }
+
+    // TRANSMITIR GPS AL BACKEND
+    function startGPSSender() {
+      if (!navigator.geolocation) return alert('❌ Tu dispositivo no soporta geolocalización GPS.');
+
+      document.getElementById('gps-status-badge').className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold';
+      document.getElementById('gps-status-badge').innerText = 'Transmitiendo GPS';
+
+      gpsWatchId = navigator.geolocation.watchPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        if (carrierMarker) {
+          carrierMarker.setLatLng([lat, lng]);
+          map.panTo([lat, lng]);
+        }
+
+        try {
+          await fetch('/api/gps/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              auctionId: 'auc_101',
+              carrierId: currentUser ? currentUser.id : 'carrier_anon',
+              lat: lat,
+              lng: lng
+            })
+          });
+        } catch (e) { console.error('Error enviando GPS'); }
+      }, (err) => console.error(err), { enableHighAccuracy: true });
+    }
+
+    function stopGPSSender() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      document.getElementById('gps-status-badge').className = 'text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold';
+      document.getElementById('gps-status-badge').innerText = 'Inactivo';
+    }
+
+    function renderFeed() {
+      const feedContainer = document.getElementById('live-auction-feed');
+      if (!feedContainer) return;
+
+      feedContainer.innerHTML = mockFletes.map(f => `
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-truck"></i></div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
+                <p class="text-[10px] text-slate-400">${f.carga} • Total: <span class="text-emerald-400 font-bold">$ ${Number(f.monto).toLocaleString()}</span></p>
+              </div>
+            </div>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg border border-amber-500/30">${f.estado}</span>
+          </div>
+          <button onclick="payWithMercadoPago('${f.id}', '${f.origen} a ${f.destino}', ${f.monto})" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-credit-card"></i> Pagar Flete con Mercado Pago
+          </button>
+        </div>
+      `).join('');
+
+      const activeList = document.getElementById('active-fletes-list');
+      if (activeList) activeList.innerHTML = feedContainer.innerHTML;
+
+      const txContainer = document.getElementById('wallet-transactions');
+      if (txContainer) {
+        txContainer.innerHTML = mockTransactions.map(t => `
+          <div class="flex justify-between items-center p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+            <div>
+              <p class="font-bold text-slate-200 text-[11px]">${t.concepto}</p>
+              <p class="text-[9px] text-slate-400">${t.id} • Destino: ${t.destino}</p>
+            </div>
+            <span class="text-emerald-400 font-mono font-bold">${t.monto}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function handleCreateAuction(e) {
+      e.preventDefault();
+      const origen = document.getElementById('flete-origen').value;
+      const destino = document.getElementById('flete-destino').value;
+      const vehiculo = document.getElementById('flete-vehiculo').value;
+      const monto = document.getElementById('flete-monto').value;
+
+      try {
+        const res = await fetch('/api/auctions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origin: origen, destination: destino, vehicleType: vehiculo, amount: monto, userId: currentUser ? currentUser.id : 'usr_anon' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          mockFletes.unshift({ id: data.auction.id, origen: data.auction.origin, destino: data.auction.destination, carga: data.auction.vehicleType, monto: data.auction.totalAmount, estado: 'Licitando' });
+          renderFeed();
+          alert('🚀 Subasta enviada al servidor.\n5% Retención: $' + data.auction.masterFee_5pct.toLocaleString());
+          switchView('home');
+        }
+      } catch (err) { alert('❌ Error al crear subasta.'); }
+    }
+
+    function runFinancialSimulation(e) {
+      e.preventDefault();
+      const monto = parseFloat(document.getElementById('sim-monto').value);
+      const comision = monto * 0.05;
+      const prestador = monto * 0.95;
+      const resBox = document.getElementById('sim-result');
+      resBox.classList.remove('hidden');
+      resBox.innerHTML = `
+        <p class="text-amber-400 font-bold mb-1">⚡ DESGLOSE DE LIQUIDACIÓN AUTOMÁTICA</p>
+        <p>• Total Operación: <b class="text-white">$ ${monto.toLocaleString()}</b></p>
+        <p>• Prestador (95%): <b class="text-slate-300">$ ${prestador.toLocaleString()}</b></p>
+        <p>• Plataforma (5%): <b class="text-emerald-400">$ ${comision.toLocaleString()}</b></p>
+        <p class="mt-2 text-[10px] text-amber-300">CBU Destino Maestro: 0000003100077621570425</p>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAuthUI();
+      renderFeed();
+    });
+  </script>
+</body>
+</html>
+
   
       
