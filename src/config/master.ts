@@ -1,6 +1,7 @@
-export const MASTER_CONFIG = {
-  cbu: '0000003100077621570425',
-  commissionRate: 0.05,
-  mpAccessToken: process.env.MP_ACCESS_TOKEN || 'TEST-0000000000000000-000000-00000000000000000000000000000000-000000000'
+export const config = {
+  env: process.env.NODE_ENV || 'development',
+  port: process.env.PORT || 3000,
+  appName: process.env.APP_NAME || 'Express Vercel App',
 };
 
+export default config;
