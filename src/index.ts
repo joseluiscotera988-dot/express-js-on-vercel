@@ -1,34 +1,28 @@
 import express from 'express';
-
-import authRoutes from './routes/auth';
-import auctionRoutes from './routes/auctions';
-import paymentRoutes from './routes/payments';
-import gpsRoutes from './routes/gps';
-import escrowRoutes from './routes/escrow';
-import chatRoutes from './routes/chat';
-import adsRoutes from './routes/ads';
-import marketplaceRoutes from './routes/marketplace';
-import webhookRoutes from './routes/webhooks';
-import adminRoutes from './routes/admin';
+import escrowRouter from './routes/escrow';
 
 const app = express();
+
+// Middleware para entender JSON en las peticiones
 app.use(express.json());
 
-// Rutas de la API Backend
-app.use('/api/users', authRoutes);
-app.use('/api/auctions', auctionRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/gps', gpsRoutes);
-app.use('/api/escrow', escrowRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/ads', adsRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/webhooks', webhookRoutes);
-app.use('/api/admin', adminRoutes);
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ONLINE', architecture: 'Modular Clean System' });
+// Ruta principal de inicio (raíz '/')
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Servidor Express activo en Vercel'
+  });
 });
 
+// Ruta de estado de la API
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Rutas de módulos
+app.use('/api/escrow', escrowRouter);
+
 export default app;
-        
