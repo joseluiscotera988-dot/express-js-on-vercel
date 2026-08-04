@@ -14,242 +14,140 @@
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
     .gold-text { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #gps-map { height: 260px; width: 100%; border-radius: 1rem; z-index: 10; }
+    #gps-map { height: 240px; width: 100%; border-radius: 1rem; z-index: 10; }
   </style>
 </head>
-<body class="pb-24 min-h-screen selection:bg-amber-500 selection:text-black">
+<body class="pb-24 min-h-screen">
 
-  <!-- HEADER -->
   <header class="bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800/80 px-4 py-3">
     <div class="flex justify-between items-center max-w-md mx-auto">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl gold-gradient flex items-center justify-center font-extrabold text-slate-950 text-lg shadow-lg shadow-amber-500/20">
-          P&M
-        </div>
-        <div>
-          <h1 class="text-sm font-extrabold tracking-wide text-white leading-tight">PASE Y MIRE</h1>
-          <p class="text-[10px] text-amber-400 font-medium flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Ecosistema v3.2 Live
-          </p>
-        </div>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl gold-gradient flex items-center justify-center font-extrabold text-slate-950 text-base shadow-lg">P&M</div>
+        <h1 class="text-sm font-extrabold tracking-wide text-white">PASE Y MIRE</h1>
       </div>
-      <div id="user-badge" onclick="openAuthModal()" class="glass-card hover:bg-slate-800/80 px-3 py-1.5 rounded-full text-xs flex items-center gap-2 cursor-pointer transition border border-slate-700/60">
-        <span id="user-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        <span id="user-badge-text" class="font-semibold text-slate-200">Invitado (Ingresar)</span>
+      <div onclick="openAuthModal()" class="glass-card px-3 py-1.5 rounded-full text-xs flex items-center gap-2 cursor-pointer border border-slate-700">
+        <span id="user-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span id="user-badge-text" class="font-semibold text-slate-200">Ingresar</span>
       </div>
     </div>
   </header>
 
-  <!-- BANNER ADMIN CBU -->
-  <div id="admin-top-banner" class="hidden bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-b border-amber-500/30 px-4 py-2 text-xs">
+  <div id="admin-top-banner" class="hidden bg-slate-900 border-b border-amber-500/30 px-4 py-2 text-xs">
     <div class="max-w-md mx-auto flex justify-between items-center text-amber-300">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-shield-halved text-amber-400"></i>
-        <span class="font-mono font-bold text-[11px]">CBU MAESTRO: ...570425</span>
-      </div>
-      <span class="bg-amber-500/20 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-500/40">5% AUTO-SPLIT ON</span>
+      <span class="font-mono font-bold text-[11px]">CBU MAESTRO: ...570425</span>
+      <span class="bg-amber-500/20 px-2 py-0.5 rounded text-[10px] font-bold">5% AUTO-SPLIT ON</span>
     </div>
   </div>
 
   <main class="max-w-md mx-auto p-4 space-y-5">
-
-    <!-- VISTA 1: HOME -->
     <div id="view-home" class="space-y-5">
-      <div class="glass-card rounded-2xl p-4 relative overflow-hidden border-amber-500/30">
-        <div class="absolute top-0 right-0 bg-amber-500 text-slate-950 font-black text-[9px] px-2.5 py-0.5 rounded-bl-lg tracking-wider uppercase">PROMO ADS</div>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400"><i class="fa-solid fa-bullhorn text-lg"></i></div>
-          <div>
-            <h4 class="text-xs font-bold text-slate-100">Publicidad Central P&M</h4>
-            <p class="text-[11px] text-slate-400">100% ingresos acreditados a Cuenta Maestra.</p>
-          </div>
-        </div>
-      </div>
-
-      <section class="glass-card p-5 rounded-2xl relative shadow-2xl border-slate-700/60">
+      <section class="glass-card p-5 rounded-2xl shadow-2xl border-slate-700/60">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-[11px] text-slate-400 uppercase tracking-wider font-bold">Billetera Escrow (Custodia)</span>
-          <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-lock text-[9px]"></i> Garantía BCN</span>
+          <span class="text-[11px] text-slate-400 uppercase font-bold">Billetera Escrow</span>
+          <span class="text-[10px] text-emerald-400 font-bold">Garantía P&M</span>
         </div>
-        <div class="flex justify-between items-baseline my-1">
-          <div>
-            <span id="user-balance" class="text-3xl font-extrabold text-white tracking-tight">$ 145.000,00</span>
-            <p class="text-[11px] text-slate-400 mt-0.5">Saldo libre para subastas y compras</p>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800/80">
-          <button onclick="protectedAction('wallet')" class="gold-gradient text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-wallet"></i> Billetera</button>
-          <button onclick="protectedAction('simulador')" class="bg-slate-800 text-slate-200 font-semibold py-2.5 rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-2"><i class="fa-solid fa-calculator"></i> Motor 5%</button>
+        <span id="user-balance" class="text-3xl font-extrabold text-white tracking-tight">$ 145.000,00</span>
+        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800">
+          <button onclick="protectedAction('wallet')" class="gold-gradient text-slate-950 font-bold py-2 rounded-xl text-xs">Billetera</button>
+          <button onclick="protectedAction('simulador')" class="bg-slate-800 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700">Simulador 5%</button>
         </div>
       </section>
 
       <section class="grid grid-cols-2 gap-3">
-        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50 transition">
-          <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-2"><i class="fa-solid fa-truck-fast text-base"></i></div>
+        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50">
+          <i class="fa-solid fa-truck-fast text-amber-400 text-lg mb-2"></i>
           <h3 class="font-bold text-slate-100 text-sm">Subastas Fletes</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">Licitaciones y GPS.</p>
         </button>
-        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50 transition">
-          <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-2"><i class="fa-solid fa-store text-base"></i></div>
+        <button onclick="protectedAction('fletes')" class="glass-card p-4 rounded-2xl text-left hover:border-amber-500/50">
+          <i class="fa-solid fa-store text-amber-400 text-lg mb-2"></i>
           <h3 class="font-bold text-slate-100 text-sm">Marketplace</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">Productos y envíos.</p>
         </button>
       </section>
 
       <section class="glass-card p-4 rounded-2xl space-y-3">
-        <div class="flex justify-between items-center">
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Actividad Servidor
-          </h2>
-          <span class="text-[10px] text-amber-400 font-mono">EN VIVO</span>
-        </div>
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Actividad en Vivo</h2>
         <div id="live-auction-feed" class="space-y-2"></div>
       </section>
-           <!-- VISTA 2: SUBASTAS, GPS MAPA Y QR DE ENTREGA -->
+    </div>
+
     <div id="view-fletes" class="hidden space-y-5">
       <section class="glass-card p-4 rounded-2xl space-y-3 border-amber-500/30">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-location-crosshairs text-amber-400"></i> Radar GPS Cargas & Fletes
-          </h3>
-          <span id="gps-status-badge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">Inactivo</span>
-        </div>
+        <h3 class="text-xs font-bold text-slate-200 uppercase"><i class="fa-solid fa-location-crosshairs text-amber-400"></i> Radar GPS en Vivo</h3>
         <div id="gps-map"></div>
         <div class="grid grid-cols-2 gap-2 text-xs pt-1">
-          <button onclick="startGPSSender()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-1"><i class="fa-solid fa-satellite-dish"></i> Emitir GPS</button>
-          <button onclick="stopGPSSender()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl flex items-center justify-center gap-1"><i class="fa-solid fa-power-off"></i> Detener</button>
+          <button onclick="startGPSSender()" class="bg-emerald-600 text-white font-bold py-2 rounded-xl">Emitir GPS</button>
+          <button onclick="stopGPSSender()" class="bg-slate-800 text-slate-300 font-semibold py-2 rounded-xl">Detener</button>
         </div>
       </section>
 
-      <!-- SECCIÓN CÓDIGO QR DE LIBERACIÓN DE PAGO -->
       <section class="glass-card p-5 rounded-2xl space-y-3 border-emerald-500/30">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-qrcode"></i> QR Escrow de Entrega Segura
-          </h3>
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono font-bold">RELEASE READY</span>
-        </div>
-        <p class="text-xs text-slate-400">El transportista genera el QR al llegar; el cliente lo escanea para autorizar la liberación inmediata de los fondos.</p>
-        
+        <h3 class="text-xs font-bold text-emerald-400 uppercase"><i class="fa-solid fa-qrcode"></i> QR Escrow de Entrega</h3>
         <div id="qr-box" class="hidden text-center p-4 bg-slate-950 rounded-xl space-y-3 border border-slate-800">
-          <img id="qr-image" src="" alt="Código QR Escrow" class="w-48 h-48 mx-auto rounded-lg border-2 border-amber-400 p-2 bg-white" />
-          <p id="qr-token-text" class="text-[10px] font-mono text-amber-400 font-bold break-all"></p>
-          <button onclick="simulateClientQRScan()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
-            <i class="fa-solid fa-circle-check"></i> [Cliente] Simular Escaneo y Liberar Pago
-          </button>
+          <img id="qr-image" src="" class="w-40 h-40 mx-auto rounded-lg border-2 border-amber-400 p-2 bg-white" />
+          <button onclick="simulateClientQRScan()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs">Simular Escaneo y Liberar Pago</button>
         </div>
-
-        <button onclick="generateEscrowQR('auc_101', 65000)" class="w-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
-          <i class="fa-solid fa-qrcode"></i> Generar QR de Liberación (Flete #101)
-        </button>
+        <button onclick="generateEscrowQR('auc_101', 65000)" class="w-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold py-2 rounded-xl text-xs">Generar QR de Liberación (#101)</button>
       </section>
 
-      <section class="glass-card p-5 rounded-2xl space-y-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-slate-950 font-bold"><i class="fa-solid fa-truck-ramp-box text-lg"></i></div>
-          <div>
-            <h2 class="text-base font-bold text-white">Publicar Flete / Carga</h2>
-            <p class="text-xs text-slate-400">Subasta inversa con retención Escrow 5%</p>
-          </div>
-        </div>
-        <form onsubmit="handleCreateAuction(event)" class="space-y-3 pt-2">
-          <input id="flete-origen" type="text" placeholder="Origen (Ej: San Pedro)" class="w-full p-3 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none focus:border-amber-400" required />
-          <input id="flete-destino" type="text" placeholder="Destino (Ej: Rosario)" class="w-full p-3 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none focus:border-amber-400" required />
-          <div class="grid grid-cols-2 gap-2">
-            <select id="flete-vehiculo" class="p-3 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none">
-              <option>Utilitario / Camioneta</option>
-              <option>Camión Chasis</option>
-              <option>Acoplado / Semirremolque</option>
-            </select>
-            <input id="flete-monto" type="number" placeholder="Monto ($)" class="p-3 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none focus:border-amber-400" required />
-          </div>
-          <button type="submit" class="w-full gold-gradient text-slate-950 font-bold py-3 rounded-xl text-xs shadow-xl"><i class="fa-solid fa-gavel"></i> Iniciar Licitación</button>
+      <section class="glass-card p-5 rounded-2xl space-y-3">
+        <h2 class="text-base font-bold text-white">Publicar Flete</h2>
+        <form onsubmit="handleCreateAuction(event)" class="space-y-3">
+          <input id="flete-origen" type="text" placeholder="Origen" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
+          <input id="flete-destino" type="text" placeholder="Destino" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
+          <input id="flete-monto" type="number" placeholder="Monto ($)" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
+          <button type="submit" class="w-full gold-gradient text-slate-950 font-bold py-2.5 rounded-xl text-xs">Iniciar Subasta</button>
         </form>
-      </section>
-
-      <section class="glass-card p-4 rounded-2xl space-y-3">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Licitaciones Activas</h3>
-        <div id="active-fletes-list" class="space-y-2"></div>
       </section>
     </div>
 
-    <!-- VISTA 3: BILLETERA -->
     <div id="view-wallet" class="hidden space-y-5">
-      <section class="bg-gradient-to-tr from-slate-950 via-slate-900 to-amber-950/50 p-5 rounded-2xl border border-amber-500/30 relative shadow-2xl">
-        <div class="flex justify-between items-start mb-6">
-          <div>
-            <p class="text-[10px] text-amber-400 font-mono font-bold uppercase">Smart Contract Escrow</p>
-            <h3 class="text-lg font-extrabold text-white">P&M Pay Digital</h3>
-          </div>
-          <span class="text-2xl font-black italic gold-text">P&M</span>
-        </div>
-        <p id="card-holder" class="font-mono text-sm uppercase text-slate-100 font-bold mb-4">INVITADO</p>
-        <div class="flex justify-between text-[10px] text-slate-400 font-mono pt-3 border-t border-slate-800">
-          <span class="text-emerald-400"><i class="fa-solid fa-shield"></i> KYC OK</span>
-          <span>AUTORETIRO ACTIVADO</span>
-        </div>
-      </section>
-      <section class="glass-card p-4 rounded-2xl space-y-3">
-        <h3 class="text-xs font-bold text-slate-400 uppercase">Movimientos Auditados</h3>
-        <div id="wallet-transactions" class="space-y-2 text-xs"></div>
+      <section class="glass-card p-5 rounded-2xl">
+        <h3 class="text-lg font-bold text-white">P&M Pay Escrow</h3>
+        <p id="card-holder" class="font-mono text-xs text-amber-400 mt-2">INVITADO</p>
       </section>
     </div>
 
-    <!-- VISTA 4: SIMULADOR -->
     <div id="view-simulador" class="hidden space-y-5">
-      <section class="glass-card p-5 rounded-2xl space-y-4">
-        <h2 class="text-base font-bold text-white">Simulador Split 5% + Publicidad</h2>
-        <div class="space-y-2 text-xs bg-slate-950/80 p-4 rounded-xl border border-slate-800 font-mono">
-          <p class="flex justify-between"><span class="text-slate-400">CBU Maestro:</span><span class="text-amber-400 font-bold">0000003100077621570425</span></p>
-          <p class="flex justify-between"><span class="text-slate-400">Comisión:</span><span class="text-emerald-400 font-bold">5% Automático</span></p>
-        </div>
+      <section class="glass-card p-5 rounded-2xl space-y-3">
+        <h2 class="text-base font-bold text-white">Simulador Split 5%</h2>
         <form onsubmit="runFinancialSimulation(event)" class="space-y-3">
-          <input id="sim-monto" type="number" value="100000" class="w-full p-3 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none" required />
-          <button type="submit" class="w-full bg-emerald-500 text-slate-950 font-bold py-3 rounded-xl text-xs"><i class="fa-solid fa-play"></i> Calcular Split</button>
+          <input id="sim-monto" type="number" value="100000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs" required />
+          <button type="submit" class="w-full bg-emerald-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Calcular</button>
         </form>
-        <div id="sim-result" class="hidden p-4 bg-slate-950 rounded-xl border border-amber-500/30 text-xs"></div>
+        <div id="sim-result" class="hidden p-3 bg-slate-950 rounded-xl border border-amber-500/30 text-xs"></div>
       </section>
     </div>
 
-    <!-- VISTA 5: PERFIL -->
     <div id="view-profile" class="hidden space-y-5">
-      <section class="glass-card p-5 rounded-2xl text-center space-y-4">
-        <div id="profile-avatar" class="w-16 h-16 gold-gradient text-slate-950 font-black rounded-2xl flex items-center justify-center text-xl mx-auto shadow-xl">PM</div>
-        <div>
-          <h3 id="profile-name" class="font-bold text-slate-100 text-base">Invitado</h3>
-          <p id="profile-role" class="text-xs text-amber-400">Sin Verificar</p>
-        </div>
-        <div id="admin-badge" class="hidden bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs py-1.5 px-3 rounded-full font-bold inline-flex items-center gap-2">
-          <i class="fa-solid fa-crown text-amber-400"></i> CUENTA MAESTRA ROOT ACTIVADA
-        </div>
-        <button onclick="logout()" class="w-full text-xs text-red-400 bg-red-500/10 border border-red-500/20 py-2.5 rounded-xl">Cerrar Sesión</button>
+      <section class="glass-card p-5 rounded-2xl text-center space-y-3">
+        <h3 id="profile-name" class="font-bold text-slate-100">Invitado</h3>
+        <p id="profile-role" class="text-xs text-amber-400">Sin Verificar</p>
+        <div id="admin-badge" class="hidden bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs py-1 px-3 rounded-full font-bold">👑 MODO ROOT MAESTRO</div>
+        <button onclick="logout()" class="w-full text-xs text-red-400 bg-red-500/10 py-2 rounded-xl">Cerrar Sesión</button>
       </section>
     </div>
-
-  </main>
-
-  <!-- MODAL KYC -->
+          </main>
+    <!-- MODAL REGISTRO KYC -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card rounded-3xl p-6 w-full max-w-sm border-slate-700 space-y-4 shadow-2xl">
+    <div class="glass-card rounded-3xl p-6 w-full max-w-sm border-slate-700 space-y-4">
       <div class="flex justify-between items-center">
-        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-user-shield text-amber-400"></i> Registro KYC Real</h3>
+        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-user-shield text-amber-400"></i> Registro KYC</h3>
         <button onclick="closeAuthModal()" class="text-slate-400 text-xl font-bold">×</button>
       </div>
       <form onsubmit="handleRegister(event)" class="space-y-3">
-        <input id="reg-name" type="text" placeholder="Nombre completo (DNI)" class="w-full p-3 bg-slate-950/90 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none" required />
-        <input id="reg-phone" type="tel" placeholder="WhatsApp / Celular" class="w-full p-3 bg-slate-950/90 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none" required />
-        <select id="reg-role" class="w-full p-3 bg-slate-950/90 border border-slate-700 rounded-xl text-xs text-slate-100 outline-none">
+        <input id="reg-name" type="text" placeholder="Nombre completo" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100" required />
+        <input id="reg-phone" type="tel" placeholder="WhatsApp / Teléfono" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100" required />
+        <select id="reg-role" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
           <option value="Cliente / Comprador">Cliente / Comprador</option>
           <option value="Transportista / Flete">Transportista / Flete</option>
-          <option value="Comerciante Marketplace">Comerciante Marketplace</option>
           <option value="ADMIN_ROOT">👑 Activar Cuenta Maestra Root</option>
         </select>
-        <button type="submit" class="w-full gold-gradient text-slate-950 font-bold py-3 rounded-xl text-xs shadow-xl">Validar e Ingresar 🚀</button>
+        <button type="submit" class="w-full gold-gradient text-slate-950 font-bold py-2.5 rounded-xl text-xs">Validar e Ingresar 🚀</button>
       </form>
     </div>
   </div>
 
-  <!-- NAVEGACIÓN FIJA -->
+  <!-- NAV INFERIOR -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-950/95 border-t border-slate-800 px-2 py-2 z-30 backdrop-blur-md">
     <div class="max-w-md mx-auto flex justify-around text-center text-xs text-slate-400">
       <button id="nav-home" onclick="switchView('home')" class="text-amber-400 font-bold flex flex-col items-center gap-1"><i class="fa-solid fa-house text-base"></i><span class="text-[10px]">Inicio</span></button>
@@ -258,9 +156,9 @@
       <button id="nav-wallet" onclick="protectedAction('wallet')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-wallet text-base"></i><span class="text-[10px]">Billetera</span></button>
       <button id="nav-profile" onclick="protectedAction('profile')" class="flex flex-col items-center gap-1"><i class="fa-solid fa-user text-base"></i><span class="text-[10px]">Perfil</span></button>
     </div>
-            </nav>
-            </div>
-    <!-- LÓGICA JAVASCRIPT CON QR ESCROW, GPS Y MERCADO PAGO -->
+  </nav>
+
+  <!-- LÓGICA JAVASCRIPT JS -->
   <script>
     let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
     let map, carrierMarker;
@@ -272,21 +170,11 @@
       { id: 'auc_102', origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
     ];
 
-    const mockTransactions = [
-      { id: 'TX-8821', concepto: 'Comisión Flete #102 (5%)', monto: '+$ 7.000,00', destino: 'Cuenta Maestra' },
-      { id: 'TX-8820', concepto: 'Banners Ads Banner #1', monto: '+$ 15.000,00', destino: 'Cuenta Maestra' }
-    ];
-
     function initMap() {
       if (map) return;
       map = L.map('gps-map').setView([-33.6787, -59.6647], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
-
-      carrierMarker = L.marker([-33.6787, -59.6647]).addTo(map)
-        .bindPopup('🚛 Carga / Flete en Rastreo GPS')
-        .openPopup();
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      carrierMarker = L.marker([-33.6787, -59.6647]).addTo(map).bindPopup('🚛 Carga en Rastreo GPS').openPopup();
     }
 
     function updateAuthUI() {
@@ -313,8 +201,8 @@
           if (adminBanner) adminBanner.classList.add('hidden');
         }
       } else {
-        if (badgeText) badgeText.innerText = 'Invitado (Ingresar)';
-        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        if (badgeText) badgeText.innerText = 'Ingresar';
+        if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400';
         if (adminBanner) adminBanner.classList.add('hidden');
       }
     }
@@ -332,9 +220,7 @@
       if (selectedView) selectedView.classList.remove('hidden');
       if (selectedNav) selectedNav.classList.add('text-amber-400', 'font-bold');
 
-      if (viewName === 'fletes') {
-        setTimeout(initMap, 200);
-      }
+      if (viewName === 'fletes') setTimeout(initMap, 200);
     }
 
     function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
@@ -358,9 +244,9 @@
           localStorage.setItem('pm_user', JSON.stringify(currentUser));
           updateAuthUI();
           closeAuthModal();
-          alert('🎉 Identidad verificada mediante KYC.\nID: ' + data.user.id);
+          alert('🎉 KYC Verificado en Backend.');
         }
-      } catch (err) { alert('❌ Error en el registro KYC'); }
+      } catch (err) { alert('❌ Error KYC'); }
     }
 
     function logout() {
@@ -375,7 +261,6 @@
       else switchView(targetView);
     }
 
-    // GENERAR Y ESCANEAR CÓDIGO QR ESCROW
     async function generateEscrowQR(auctionId, amount) {
       try {
         const res = await fetch('/api/escrow/generate-qr', {
@@ -384,20 +269,17 @@
           body: JSON.stringify({ auctionId, amount })
         });
         const data = await res.json();
-
         if (data.success) {
           activeReleaseToken = data.releaseToken;
           document.getElementById('qr-box').classList.remove('hidden');
           document.getElementById('qr-image').src = data.qrDataUrl;
-          document.getElementById('qr-token-text').innerText = `TOKEN: ${data.releaseToken}`;
-          alert(`📲 QR de Liberación generado para Flete ${auctionId}.\n• Pago Transportista (95%): $${data.details.carrierPayout_95.toLocaleString()}\n• Retención CBU (5%): $${data.details.masterFee_5.toLocaleString()}`);
+          alert('📲 QR de Liberación Escrow Generado.');
         }
-      } catch (err) { alert('❌ Error generando código QR'); }
+      } catch (err) { alert('❌ Error generando QR'); }
     }
 
     async function simulateClientQRScan() {
-      if (!activeReleaseToken) return alert('❌ No hay ningún QR activo.');
-
+      if (!activeReleaseToken) return alert('❌ Generá un QR primero.');
       try {
         const res = await fetch('/api/escrow/release', {
           method: 'POST',
@@ -405,77 +287,46 @@
           body: JSON.stringify({ releaseToken: activeReleaseToken })
         });
         const data = await res.json();
-
         if (data.success) {
-          alert(`🎉 ¡ENTREGA CONFIRMADA!\n${data.message}\n\n• Transferido a Transportista: $${data.releaseDetails.amountReleasedToCarrier.toLocaleString()}\n• Retenido a CBU Maestro: $${data.releaseDetails.masterCommissionTransferred.toLocaleString()}`);
+          alert('🎉 ¡Pago Escrow Liberado al Transportista!');
           document.getElementById('qr-box').classList.add('hidden');
           activeReleaseToken = null;
-        } else {
-          alert('❌ Error: ' + data.error);
         }
-      } catch (err) { alert('❌ Error de comunicación al liberar pago.'); }
+      } catch (err) { alert('❌ Error liberando pago'); }
     }
 
-    // PAGAR CON MERCADO PAGO
     async function payWithMercadoPago(auctionId, title, amount) {
       if (!currentUser) return openAuthModal();
-
       try {
-        const userEmail = `${currentUser.phone.replace(/[^0-9]/g, '')}@paseymire.com`;
         const res = await fetch('/api/payments/create-preference', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auctionId, title, amount, payerEmail: userEmail })
+          body: JSON.stringify({ auctionId, title, amount, payerEmail: `${currentUser.phone}@paseymire.com` })
         });
         const data = await res.json();
-
-        if (data.success && data.init_point) {
-          alert(`⚡ Redirigiendo a Mercado Pago...\n• Total: $${data.split.totalAmount.toLocaleString()}\n• 5% Retención CBU: $${data.split.masterFee_5pct.toLocaleString()}\n• Fondo Escrow: $${data.split.carrierPayout_95pct.toLocaleString()}`);
-          window.location.href = data.init_point;
-        } else {
-          alert('❌ Error al generar preferencia de pago.');
-        }
-      } catch (err) { alert('❌ Error conectando con Mercado Pago.'); }
+        if (data.success && data.init_point) window.location.href = data.init_point;
+        else alert('❌ Error al generar preferencia Mercado Pago');
+      } catch (err) { alert('❌ Error al conectar con pasarela'); }
     }
 
-    // TRANSMITIR GPS AL BACKEND
     function startGPSSender() {
-      if (!navigator.geolocation) return alert('❌ Tu dispositivo no soporta geolocalización GPS.');
-
-      document.getElementById('gps-status-badge').className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold';
-      document.getElementById('gps-status-badge').innerText = 'Transmitiendo GPS';
-
+      if (!navigator.geolocation) return alert('❌ Dispositivo sin GPS.');
       gpsWatchId = navigator.geolocation.watchPosition(async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-
-        if (carrierMarker) {
-          carrierMarker.setLatLng([lat, lng]);
-          map.panTo([lat, lng]);
-        }
-
-        try {
-          await fetch('/api/gps/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              auctionId: 'auc_101',
-              carrierId: currentUser ? currentUser.id : 'carrier_anon',
-              lat: lat,
-              lng: lng
-            })
-          });
-        } catch (e) { console.error('Error enviando GPS'); }
-      }, (err) => console.error(err), { enableHighAccuracy: true });
+        if (carrierMarker) { carrierMarker.setLatLng([lat, lng]); map.panTo([lat, lng]); }
+        fetch('/api/gps/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auctionId: 'auc_101', carrierId: currentUser ? currentUser.id : 'anon', lat, lng })
+        }).catch(() => {});
+      });
+      alert('🛰️ Transmisión GPS activada.');
     }
 
     function stopGPSSender() {
-      if (gpsWatchId !== null) {
-        navigator.geolocation.clearWatch(gpsWatchId);
-        gpsWatchId = null;
-      }
-      document.getElementById('gps-status-badge').className = 'text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold';
-      document.getElementById('gps-status-badge').innerText = 'Inactivo';
+      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+      alert('🔴 Transmisión GPS detenida.');
     }
 
     function renderFeed() {
@@ -484,75 +335,49 @@
 
       feedContainer.innerHTML = mockFletes.map(f => `
         <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-truck"></i></div>
-              <div>
-                <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
-                <p class="text-[10px] text-slate-400">${f.carga} • Total: <span class="text-emerald-400 font-bold">$ ${Number(f.monto).toLocaleString()}</span></p>
-              </div>
-            </div>
-            <span class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg border border-amber-500/30">${f.estado}</span>
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
+            <span class="text-emerald-400 font-bold text-xs">$ ${Number(f.monto).toLocaleString()}</span>
           </div>
-          <button onclick="payWithMercadoPago('${f.id}', '${f.origen} a ${f.destino}', ${f.monto})" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition">
-            <i class="fa-solid fa-credit-card"></i> Pagar Flete con Mercado Pago
+          <button onclick="payWithMercadoPago('${f.id}', '${f.origen} a ${f.destino}', ${f.monto})" class="w-full bg-blue-600 text-white font-bold py-1.5 rounded-lg text-[10px]">
+            Pagar con Mercado Pago
           </button>
         </div>
       `).join('');
-
-      const activeList = document.getElementById('active-fletes-list');
-      if (activeList) activeList.innerHTML = feedContainer.innerHTML;
-
-      const txContainer = document.getElementById('wallet-transactions');
-      if (txContainer) {
-        txContainer.innerHTML = mockTransactions.map(t => `
-          <div class="flex justify-between items-center p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
-            <div>
-              <p class="font-bold text-slate-200 text-[11px]">${t.concepto}</p>
-              <p class="text-[9px] text-slate-400">${t.id} • Destino: ${t.destino}</p>
-            </div>
-            <span class="text-emerald-400 font-mono font-bold">${t.monto}</span>
-          </div>
-        `).join('');
-      }
     }
 
     async function handleCreateAuction(e) {
       e.preventDefault();
       const origen = document.getElementById('flete-origen').value;
       const destino = document.getElementById('flete-destino').value;
-      const vehiculo = document.getElementById('flete-vehiculo').value;
       const monto = document.getElementById('flete-monto').value;
 
       try {
         const res = await fetch('/api/auctions/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ origin: origen, destination: destino, vehicleType: vehiculo, amount: monto, userId: currentUser ? currentUser.id : 'usr_anon' })
+          body: JSON.stringify({ origin: origen, destination: destino, amount: monto, userId: currentUser ? currentUser.id : 'usr_anon' })
         });
         const data = await res.json();
         if (data.success) {
-          mockFletes.unshift({ id: data.auction.id, origen: data.auction.origin, destino: data.auction.destination, carga: data.auction.vehicleType, monto: data.auction.totalAmount, estado: 'Licitando' });
+          mockFletes.unshift({ id: data.auction.id, origen, destino, carga: 'General', monto, estado: 'Licitando' });
           renderFeed();
-          alert('🚀 Subasta enviada al servidor.\n5% Retención: $' + data.auction.masterFee_5pct.toLocaleString());
+          alert('🚀 Subasta creada con retención del 5%');
           switchView('home');
         }
-      } catch (err) { alert('❌ Error al crear subasta.'); }
+      } catch (err) { alert('❌ Error al crear subasta'); }
     }
 
     function runFinancialSimulation(e) {
       e.preventDefault();
       const monto = parseFloat(document.getElementById('sim-monto').value);
-      const comision = monto * 0.05;
-      const prestador = monto * 0.95;
       const resBox = document.getElementById('sim-result');
       resBox.classList.remove('hidden');
       resBox.innerHTML = `
-        <p class="text-amber-400 font-bold mb-1">⚡ DESGLOSE DE LIQUIDACIÓN AUTOMÁTICA</p>
-        <p>• Total Operación: <b class="text-white">$ ${monto.toLocaleString()}</b></p>
-        <p>• Prestador (95%): <b class="text-slate-300">$ ${prestador.toLocaleString()}</b></p>
-        <p>• Plataforma (5%): <b class="text-emerald-400">$ ${comision.toLocaleString()}</b></p>
-        <p class="mt-2 text-[10px] text-amber-300">CBU Destino Maestro: 0000003100077621570425</p>
+        <p class="text-amber-400 font-bold mb-1">⚡ SPLIT FINANCIERO 5%</p>
+        <p>• Total: <b>$ ${monto.toLocaleString()}</b></p>
+        <p>• Prestador (95%): <b>$ ${(monto * 0.95).toLocaleString()}</b></p>
+        <p>• Retención CBU Maestro (5%): <b class="text-emerald-400">$ ${(monto * 0.05).toLocaleString()}</b></p>
       `;
     }
 
@@ -562,7 +387,6 @@
     });
   </script>
 </body>
-</html>
-
+  </html>
   
-      
+  
