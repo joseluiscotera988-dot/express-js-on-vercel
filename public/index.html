@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pase Y Mire</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+    body { background: #f3f4f6; padding-bottom: 75px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    .app-container { width: 100%; max-width: 480px; padding: 16px; flex: 1; }
+    .card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 18px; margin-bottom: 16px; }
+    .hidden { display: none !important; }
+
+    /* NAVEGACIÓN INFERIOR */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+    .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #6b7280; cursor: pointer; gap: 3px; font-weight: 600; flex: 1; }
+    .nav-btn.active { color: #2563eb; }
+    .nav-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* FORMULARIOS Y BOTONES */
+    h2, h3, h4 { color: #111827; margin-bottom: 12px; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 8px; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-secondary { background: #10b981; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; color: #374151; }
+    .tab-btn.active { background: #2563eb; color: white; }
+
+    /* COMPONENTES DE UI */
+    .product-card { display: flex; gap: 12px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 10px; cursor: pointer; background: #fff; }
+    .product-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #eee; }
+    .badge-km { background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 12px; display: inline-block; }
+    .driver-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; }
+    .virtual-card { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); color: white; border-radius: 16px; padding: 18px; box-shadow: 0 8px 20px rgba(49, 46, 129, 0.25); margin-bottom: 15px; }
+    .virtual-card .card-id { font-family: monospace; font-size: 16px; letter-spacing: 2px; margin: 12px 0; display: block; }
+    .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; margin-bottom: 8px; font-size: 13px; line-height: 1.4; }
+    .chat-mine { background: #2563eb; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+    .chat-other { background: #e5e7eb; color: #111827; margin-right: auto; border-bottom-left-radius: 2px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #9ca3af; }
+    .status-dot.online { background: #10b981; }
+    .feedback-msg { font-size: 13px; font-weight: bold; margin-top: 10px; text-align: center; word-break: break-word; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- PANTALLA 1: AUTENTICACIÓN -->
+    <div id="screen-auth" class="card">
+      <h2 style="text-align: center; color: #2563eb; margin-bottom: 16px;">Pase Y Mire</h2>
+      <div class="tabs">
+        <button id="tab-login" class="tab-btn active" onclick="switchAuthMode('login')">Ingresar</button>
+        <button id="tab-register" class="tab-btn" onclick="switchAuthMode('register')">Registro KYC</button>
+        <button id="tab-recover" class="tab-btn" onclick="switchAuthMode('recover')">Recuperar</button>
+      </div>
+
+      <div id="form-login">
+        <input type="email" id="login-email" placeholder="Correo electrónico" />
+        <input type="password" id="login-password" placeholder="Contraseña" />
+        <button id="btn-login" class="btn btn-primary" onclick="handleLogin()">Iniciar Sesión</button>
+      </div>
+
+      <div id="form-register" class="hidden">
+        <input type="text" id="reg-name" placeholder="Nombre completo" />
+        <input type="email" id="reg-email" placeholder="Correo electrónico" />
+        <input type="tel" id="reg-phone" placeholder="Teléfono de contacto" />
+        <input type="password" id="reg-password" placeholder="Contraseña" />
+        <button id="btn-register" class="btn btn-secondary" onclick="handleRegister()">Crear Cuenta KYC</button>
+      </div>
+
+      <div id="form-recover" class="hidden">
+        <input type="email" id="rec-email" placeholder="Correo electrónico registrado" />
+        <button id="btn-recover" class="btn btn-outline" onclick="handleRecover()">Enviar enlace de recuperación</button>
+      </div>
+
+      <div id="auth-status" class="feedback-msg"></div>
+    </div>
+
+    <!-- PANTALLA 2: HOME / MERCADO POR CERCANÍA -->
+    <div id="screen-home" class="card hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3>Productos Cercanos</h3>
+        <button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="showNewProductModal()">+ Publicar</button>
+      </div>
+      <div id="products-list">Cargando productos por cercanía GPS...</div>
+    </div>
+
+    <!-- DETALLE DE PRODUCTO -->
+    <div id="screen-product-detail" class="card hidden">
+      <button class="btn btn-outline" style="width: auto; padding: 4px 10px; font-size: 12px; margin-bottom: 10px;" onclick="navigateTo('home')">← Volver</button>
+      <img id="detail-img" src="" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 12px;" />
+      <h2 id="detail-title">-</h2>
+      <h3 id="detail-price" style="color: #2563eb;">$0.00</h3>
+      <span class="badge-km" id="detail-distance">0 km de distancia</span>
+      <p id="detail-desc" style="color: #4b5563; margin: 12px 0; font-size: 14px;">-</p>
+      
+      <div class="card" style="background: #f9fafb; padding: 12px; border: 1px solid #e5e7eb;">
+        <h4 style="margin-bottom: 4px;">Datos del Vendedor</h4>
+        <div id="detail-seller-name" style="font-size: 14px; font-weight: bold;">-</div>
+        <div id="detail-seller-email" style="font-size: 12px; color: #6b7280;">-</div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn btn-secondary" style="flex: 1;" id="btn-detail-call">📞 Llamar</button>
+          <button class="btn btn-primary" style="flex: 1;" id="btn-detail-chat">💬 Chat Directo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 3: LOGÍSTICA -->
+    <div id="screen-logistics" class="card hidden">
+      <h3>Servicios de Logística</h3>
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-log-MOTO" onclick="filterLogistics('MOTO')">🛵 Moto</button>
+        <button class="tab-btn" id="tab-log-REMIS" onclick="filterLogistics('REMIS')">🚗 Remis</button>
+        <button class="tab-btn" id="tab-log-FLETE" onclick="filterLogistics('FLETE')">🚚 Flete</button>
+        <button class="tab-btn" id="tab-log-LARGA_DISTANCIA" onclick="filterLogistics('LARGA_DISTANCIA')">🚌 Larga Dist.</button>
+      </div>
+
+      <div class="card" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; margin-bottom: 12px;">
+        <h4 style="font-size: 13px; color: #1e40af;">¿Sos prestador de servicio?</h4>
+        <button class="btn btn-primary" style="margin-top: 6px; padding: 8px;" onclick="toggleDriverPanel()">Activar/Desactivar Mi Modo Chofer</button>
+      </div>
+
+      <div id="drivers-list">Buscando choferes activos en tiempo real...</div>
+    </div>
+
+    <!-- PANTALLA 4: BILLETERA VIRTUAL & TARJETA ID -->
+    <div id="screen-wallet" class="card hidden">
+      <h3>Mi Billetera Virtual</h3>
+      <div class="virtual-card">
+        <small style="opacity: 0.8;">PASE Y MIRE ID</small>
+        <span class="card-id" id="wallet-card-id">PYM-0000-0000</span>
+        <div id="wallet-holder" style="font-weight: bold; font-size: 14px;">USUARIO</div>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 15px;">
+        <small style="color: #6b7280;">Saldo Disponible</small>
+        <h2 id="wallet-balance-num" style="font-size: 28px; color: #111827;">$0.00</h2>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="handleLoadFundsUI()">+ Cargar Fondos</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="handleTransferUI()">Enviar Dinero</button>
+      </div>
+
+      <div style="text-align: center; padding: 10px; background: #f9fafb; border-radius: 12px; margin-bottom: 15px;">
+        <h4>Mi Código QR de Cobro</h4>
+        <img id="wallet-qr-img" src="" style="width: 140px; height: 140px; margin-top: 6px;" />
+      </div>
+
+      <h4>Últimos Movimientos</h4>
+      <div id="wallet-history-list">Cargando transacciones...</div>
+    </div>
+
+    <!-- PANTALLA 5: CHAT, LLAMADAS Y PRESENCIA -->
+    <div id="screen-chat" class="card hidden">
+      <h3>Mensajes y Contactos</h3>
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-chat-contacts" onclick="switchChatTab('contacts')">Amigos</button>
+        <button class="tab-btn" id="tab-chat-online" onclick="switchChatTab('online')">En Línea</button>
+      </div>
+
+      <div id="chat-tab-contacts-view">
+        <button class="btn btn-outline" style="padding: 8px; font-size: 12px;" onclick="handleAddContactUI()">+ Agregar Amigo por Email</button>
+        <div id="chat-contacts-list" style="margin-top: 10px;">Cargando lista de amigos...</div>
+      </div>
+
+      <div id="chat-tab-online-view" class="hidden">
+        <div id="chat-online-list">Buscando usuarios conectados...</div>
+      </div>
+
+      <div id="chat-individual-box" class="card hidden" style="margin-top: 10px; border: 1px solid #d1d5db;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;">
+          <strong id="chat-target-name">Chat</strong>
+          <button class="btn btn-outline" style="width: auto; padding: 2px 8px; font-size: 11px;" onclick="closeIndividualChat()">Cerrar</button>
+        </div>
+        <div id="chat-messages-container" style="height: 200px; overflow-y: auto; padding-right: 4px;"></div>
+        <div style="display: flex; gap: 6px; margin-top: 8px;">
+          <input type="text" id="chat-input-text" placeholder="Escribí un mensaje..." style="margin-bottom: 0;" />
+          <button class="btn btn-primary" style="width: auto; padding: 0 16px; margin-bottom: 0;" onclick="handleSendMsgUI()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 6: PERFIL DE USUARIO -->
+    <div id="screen-profile" class="card hidden">
+      <h3>Mi Perfil</h3>
+      <div style="text-align: center; margin-bottom: 16px;">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px auto;" id="profile-avatar-ph">U</div>
+        <h4 id="profile-name-val">-</h4>
+        <small id="profile-email-val" style="color: #6b7280;">-</small>
+      </div>
+
+      <div class="card" style="background: #f9fafb; padding: 12px; border: 1px solid #e5e7eb;">
+        <label style="font-size: 12px; font-weight: bold; color: #374151;">ID de Tarjeta Virtual:</label>
+        <div id="profile-cardid-val" style="font-size: 14px; font-family: monospace;">-</div>
+      </div>
+
+      <button class="btn btn-danger" style="margin-top: 20px;" onclick="handleLogoutUI()">Cerrar Sesión</button>
+    </div>
+
+  </div>
+
+  <!-- NAVEGACIÓN INFERIOR -->
+  <nav id="main-nav" class="bottom-nav hidden">
+    <button class="nav-btn active" id="nav-home" onclick="navigateTo('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Inicio
+    </button>
+    <button class="nav-btn" id="nav-logistics" onclick="navigateTo('logistics')">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>Logística
+    </button>
+    <button class="nav-btn" id="nav-wallet" onclick="navigateTo('wallet')">
+      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8z"/></svg>Billetera
+    </button>
+    <button class="nav-btn" id="nav-chat" onclick="navigateTo('chat')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Chat
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="navigateTo('profile')">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Perfil
+    </button>
+  </nav>
+
+  <!-- LÓGICA NATIVA DE ALTA VELOCIDAD SIN LIBRERÍAS EXTERNAS -->
+  <script>
+    const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
+    
+    let currentUser = null;
+    let currentAccessToken = null;
+    let userWallet = null;
+    let userLocation = { lat: -34.6037, lng: -58.3816 };
+    let activeChatUser = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('access_token');
+      const userId = localStorage.getItem('user_id');
+      const email = localStorage.getItem('user_email');
+
+      if (token && userId && email) {
+        currentAccessToken = token;
+        currentUser = { id: userId, email: email };
+        initAppUI();
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          p => { userLocation = { lat: p.coords.latitude, lng: p.coords.longitude }; },
+          () => {}
+        );
+      }
+    });
+
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById('auth-status');
+      if (el) {
+        el.style.color = isError ? '#ef4444' : '#10b981';
+        el.innerText = msg;
+      }
+    }
+
+    // CAMBIO DE PESTAÑAS (INGRESO / REGISTRO / RECUPERAR)
+    function switchAuthMode(mode) {
+      setStatus('');
+      ['login', 'register', 'recover'].forEach(m => {
+        document.getElementById(`form-${m}`).classList.add('hidden');
+        document.getElementById(`tab-${m}`).classList.remove('active');
+      });
+      document.getElementById(`form-${mode}`).classList.remove('hidden');
+      document.getElementById(`tab-${mode}`).classList.add('active');
+    }
+
+    // INICIAR SESIÓN
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) return setStatus('Completá email y contraseña.', true);
+
+      setStatus('Iniciando sesión...');
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error_description || 'Credenciales inválidas');
+
+        currentAccessToken = data.access_token;
+        currentUser = data.user;
+
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user_id', data.user.id);
+        localStorage.setItem('user_email', data.user.email);
+
+        initAppUI();
+      } catch (err) {
+        setStatus(err.message, true);
+      }
+    }
+
+    // REGISTRO KYC
+    async function handleRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      if (!name || !email || !password) return setStatus('Nombre, email y contraseña obligatorios.', true);
+
+      setStatus('Creando cuenta KYC...');
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, data: { full_name: name, phone: phone } })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.msg || 'Error al crear la cuenta.');
+
+        const userId = data.id || (data.user && data.user.id);
+        if (userId) {
+          // Guardar perfil
+          await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ id: userId, full_name: name, email: email, phone: phone, lat: userLocation.lat, lng: userLocation.lng, is_online: true })
+          });
+
+          // Crear tarjeta ID y Billetera
+          const cardId = `PYM-${userId.substring(0,4).toUpperCase()}-${userId.substring(4,8).toUpperCase()}`;
+          await fetch(`${SUPABASE_URL}/rest/v1/wallets`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ user_id: userId, email: email, balance: 1000.00, card_id: cardId })
+          });
+        }
+
+        setStatus('¡Cuenta creada! Ya podés ingresar.');
+        setTimeout(() => switchAuthMode('login'), 1500);
+      } catch (err) {
+        setStatus(err.message, true);
+      }
+    }
+
+    // RECUPERAR CLAVE
+    async function handleRecover() {
+      const email = document.getElementById('rec-email').value.trim();
+      if (!email) return setStatus('Ingresá tu correo.', true);
+
+      setStatus('Enviando enlace...');
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        if (!res.ok) throw new Error('No se pudo enviar el correo.');
+        setStatus('Se envió el enlace a tu correo.');
+      } catch (err) {
+        setStatus(err.message, true);
+      }
+    }
+
+    function initAppUI() {
+      document.getElementById('screen-auth').classList.add('hidden');
+      document.getElementById('main-nav').classList.remove('hidden');
+      navigateTo('home');
+      syncUserWallet();
+    }
+
+    function navigateTo(screen) {
+      ['auth', 'home', 'product-detail', 'logistics', 'wallet', 'chat', 'profile'].forEach(s => {
+        const el = document.getElementById(`screen-${s}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      document.getElementById(`screen-${screen}`).classList.remove('hidden');
+      document.query
