@@ -3,166 +3,368 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase Y Mire</title>
+  <title>Pase Y Mire - App</title>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 24px; max-width: 400px; width: 100%; }
-    h2, h1 { margin-top: 0; color: #111; text-align: center; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #f3f4f6; margin: 0; padding: 0; padding-bottom: 70px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+    /* CONTENEDOR PRINCIPAL MOBILE */
+    .app-container { width: 100%; max-width: 480px; padding: 16px; flex: 1; }
+    .card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 20px; margin-bottom: 16px; }
+    .hidden { display: none !important; }
+
+    /* NAVEGACIÓN INFERIOR */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #6b7280; cursor: pointer; gap: 4px; font-weight: 600; }
+    .nav-btn.active { color: #2563eb; }
+    .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
+
+    /* FORMULARIOS Y BOTONES */
+    h1, h2, h3 { color: #111827; margin: 0 0 12px 0; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin-bottom: 12px; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-secondary { background: #10b981; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+
+    /* TARJETA VIRTUAL ID */
+    .virtual-card { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); color: white; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(49, 46, 129, 0.3); position: relative; overflow: hidden; margin-bottom: 20px; }
+    .virtual-card .chip { width: 40px; height: 30px; background: #f59e0b; border-radius: 6px; margin-bottom: 15px; }
+    .virtual-card .card-id { font-family: monospace; font-size: 18px; letter-spacing: 2px; margin-bottom: 15px; display: block; }
+    .virtual-card .card-holder { font-size: 14px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+    .virtual-card .badge { position: absolute; top: 20px; right: 20px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+
+    /* BILLETERA VIRTUAL */
+    .wallet-balance { text-align: center; padding: 15px 0; }
+    .wallet-balance .amount { font-size: 32px; font-weight: 800; color: #111827; }
+    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .transaction-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .tx-positive { color: #10b981; font-weight: bold; }
+    .tx-negative { color: #ef4444; font-weight: bold; }
+
+    /* TABS LOGIN */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
     .tab-btn { flex: 1; padding: 10px; border: none; background: #e5e7eb; border-radius: 6px; cursor: pointer; font-weight: bold; color: #374151; }
     .tab-btn.active { background: #2563eb; color: white; }
-    .form-group { display: flex; flex-direction: column; gap: 12px; }
-    .hidden { display: none !important; }
-    input { padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; width: 100%; }
-    .btn-submit { padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-    .btn-submit:hover { background: #1d4ed8; }
-    .btn-logout { padding: 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px; }
-    .btn-logout:hover { background: #dc2626; }
-    .user-box { background: #e0e7ff; color: #1e40af; padding: 12px; border-radius: 8px; font-weight: bold; margin: 20px 0; word-break: break-all; text-align: center; }
   </style>
 </head>
 <body>
 
-  <!-- PANTALLA 1: INICIO DE SESIÓN Y REGISTRO -->
-  <div id="screen-auth" class="card">
-    <h2>Pase Y Mire</h2>
+  <div class="app-container">
 
-    <div class="tabs">
-      <button id="btn-login" class="tab-btn active" onclick="switchTab('login')">Ingresar</button>
-      <button id="btn-register" class="tab-btn" onclick="switchTab('register')">Registro KYC</button>
+    <!-- PANTALLA 1: AUTENTICACIÓN (LOGIN / REGISTRO KYC) -->
+    <div id="screen-auth" class="card">
+      <h2 style="text-align: center;">Pase Y Mire</h2>
+      <div class="tabs">
+        <button id="btn-tab-login" class="tab-btn active" onclick="switchAuthTab('login')">Ingresar</button>
+        <button id="btn-tab-reg" class="tab-btn" onclick="switchAuthTab('register')">Registro KYC</button>
+      </div>
+
+      <div id="form-login">
+        <input type="email" id="login-email" placeholder="Correo electrónico" />
+        <input type="password" id="login-password" placeholder="Contraseña" />
+        <button class="btn btn-primary" onclick="ejecutarLogin()">Iniciar Sesión</button>
+      </div>
+
+      <div id="form-register" class="hidden">
+        <input type="text" id="reg-nombre" placeholder="Nombre completo" />
+        <input type="email" id="reg-email" placeholder="Correo electrónico" />
+        <input type="password" id="reg-password" placeholder="Contraseña" />
+        <button class="btn btn-secondary" onclick="ejecutarRegistro()">Crear Cuenta (KYC)</button>
+      </div>
     </div>
 
-    <!-- Formulario Iniciar Sesión -->
-    <div id="form-login" class="form-group">
-      <input type="email" id="login-email" placeholder="Correo electrónico" required />
-      <input type="password" id="login-password" placeholder="Contraseña" required />
-      <button type="button" class="btn-submit" onclick="ejecutarLogin()">Iniciar Sesión</button>
+    <!-- PANTALLA 2: DASHBOARD / INICIO -->
+    <div id="screen-dashboard" class="card hidden">
+      <h2>Inicio</h2>
+      <p style="color: #6b7280;">Bienvenido a la plataforma Pase Y Mire.</p>
+      
+      <div class="card" style="background: #f9fafb; padding: 12px; margin: 15px 0;">
+        <small style="color: #6b7280;">Usuario Activo:</small>
+        <div id="dash-user-email" style="font-weight: bold; word-break: break-all;">-</div>
+      </div>
+
+      <h3>Módulos Rápidos</h3>
+      <div class="actions-grid">
+        <button class="btn btn-outline" onclick="navigateTo('billetera')">💳 Billetera</button>
+        <button class="btn btn-outline" onclick="navigateTo('tarjeta')">🆔 Tarjeta ID</button>
+        <button class="btn btn-outline" onclick="navigateTo('anuncios')">📢 Clasificados</button>
+        <button class="btn btn-outline" onclick="navigateTo('chat')">💬 Mensajes</button>
+      </div>
+
+      <button class="btn btn-danger" style="margin-top: 20px;" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
-    <!-- Formulario Registro KYC -->
-    <div id="form-register" class="form-group hidden">
-      <input type="text" id="reg-nombre" placeholder="Nombre completo" required />
-      <input type="email" id="reg-email" placeholder="Correo electrónico" required />
-      <input type="password" id="reg-password" placeholder="Contraseña" required />
-      <button type="button" class="btn-submit" onclick="ejecutarRegistro()">Crear Cuenta (Registro KYC)</button>
+    <!-- PANTALLA 3: BILLETERA VIRTUAL -->
+    <div id="screen-billetera" class="card hidden">
+      <h2>Billetera Virtual</h2>
+      
+      <div class="wallet-balance">
+        <small style="color: #6b7280;">Saldo Disponible</small>
+        <div class="amount" id="wallet-balance-display">$0.00</div>
+      </div>
+
+      <div class="actions-grid">
+        <button class="btn btn-secondary" onclick="cargasSaldoModal()">+ Cargar Saldo</button>
+        <button class="btn btn-primary" onclick="transferirModal()">Envia Dinero</button>
+      </div>
+
+      <h3 style="margin-top: 25px;">Últimos Movimientos</h3>
+      <div id="tx-history">
+        <div class="transaction-item">
+          <span>Alta de Cuenta (Bono KYC)</span>
+          <span class="tx-positive">+$1,000.00</span>
+        </div>
+      </div>
     </div>
+
+    <!-- PANTALLA 4: TARJETA VIRTUAL (ID BILLETERA) -->
+    <div id="screen-tarjeta" class="card hidden">
+      <h2>Tarjeta Virtual ID</h2>
+      <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">Esta tarjeta identifica tu billetera dentro del sistema Pase Y Mire.</p>
+
+      <div class="virtual-card">
+        <div class="badge">KYC VERIFICADO</div>
+        <div class="chip"></div>
+        <div class="card-id" id="card-id-number">PYM-0000-0000-0000</div>
+        <div class="card-holder" id="card-holder-name">NOMBRE DEL USUARIO</div>
+      </div>
+
+      <div style="text-align: center; padding: 10px;">
+        <h3>Código QR de cobro/pago</h3>
+        <img id="qr-code-img" src="" alt="Código QR ID" style="width: 160px; height: 160px; border-radius: 8px; border: 1px solid #e5e7eb; padding: 8px;" />
+        <small style="display: block; color: #6b7280; margin-top: 8px;">Presentá este QR para recibir transferencias inmediatas.</small>
+      </div>
+    </div>
+
+    <!-- PANTALLA 5: ANUNCIOS / CLASIFICADOS -->
+    <div id="screen-anuncios" class="card hidden">
+      <h2>Clasificados</h2>
+      <input type="text" placeholder="🔍 Buscar productos o servicios..." />
+      <button class="btn btn-primary" onclick="navigateTo('publicar')" style="margin-bottom: 15px;">+ Publicar Anuncio</button>
+      
+      <div class="card" style="border: 1px solid #e5e7eb; padding: 12px;">
+        <h4 style="margin: 0 0 5px 0;">Anuncio de Muestra</h4>
+        <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">Servicio de desarrollo web y soporte técnico.</p>
+        <strong style="color: #2563eb;">$15,000 ARS</strong>
+      </div>
+    </div>
+
+    <!-- PANTALLA 6: PUBLICAR ANUNCIO -->
+    <div id="screen-publicar" class="card hidden">
+      <h2>Nuevo Anuncio</h2>
+      <input type="text" placeholder="Título de la publicación" />
+      <input type="number" placeholder="Precio ($)" />
+      <select>
+        <option>Seleccionar Categoría</option>
+        <option>Productos</option>
+        <option>Servicios</option>
+        <option>Vehículos / Inmuebles</option>
+      </select>
+      <button class="btn btn-primary" onclick="alert('Anuncio publicado con éxito'); navigateTo('anuncios');">Publicar Ahora</button>
+    </div>
+
+    <!-- PANTALLA 7: CHAT -->
+    <div id="screen-chat" class="card hidden">
+      <h2>Mensajes</h2>
+      <div class="transaction-item" style="cursor: pointer;">
+        <div>
+          <strong>Soporte Pase Y Mire</strong><br>
+          <small style="color: #6b7280;">¡Hola! ¿En qué podemos ayudarte?</small>
+        </div>
+        <small style="color: #2563eb;">Ahora</small>
+      </div>
+    </div>
+
+    <!-- PANTALLA 8: PERFIL -->
+    <div id="screen-perfil" class="card hidden">
+      <h2>Mi Perfil</h2>
+      <div id="perfil-email-display" style="font-weight: bold; margin-bottom: 15px;">-</div>
+      <button class="btn btn-outline" style="margin-bottom: 10px;" onclick="navigateTo('tarjeta')">Ver Mi Tarjeta Virtual</button>
+      <button class="btn btn-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
   </div>
 
-  <!-- PANTALLA 2: PANEL PRINCIPAL (DASHBOARD) -->
-  <div id="screen-dashboard" class="card hidden">
-    <h1>¡Bienvenido!</h1>
-    <p style="text-align:center; color:#4b5563;">Has ingresado con éxito al panel principal.</p>
-    <div id="user-info" class="user-box">Cargando sesión...</div>
-    <button type="button" class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-  </div>
+  <!-- NAVEGACIÓN INFERIOR (BOTTOM NAV) -->
+  <nav id="app-nav" class="bottom-nav hidden">
+    <button class="nav-btn active" id="nav-inicio" onclick="navigateTo('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Inicio
+    </button>
+    <button class="nav-btn" id="nav-billetera" onclick="navigateTo('billetera')">
+      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      Billetera
+    </button>
+    <button class="nav-btn" id="nav-tarjeta" onclick="navigateTo('tarjeta')">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+      Tarjeta ID
+    </button>
+    <button class="nav-btn" id="nav-anuncios" onclick="navigateTo('anuncios')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      Anuncios
+    </button>
+    <button class="nav-btn" id="nav-perfil" onclick="navigateTo('perfil')">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Perfil
+    </button>
+  </nav>
 
   <script>
     const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
 
-    // Auto-login si ya inició sesión previamente
+    let currentBalance = 1000.00;
+
     document.addEventListener('DOMContentLoaded', () => {
       const email = localStorage.getItem('user_email');
       if (email) {
-        mostrarDashboard(email);
+        iniciarApp(email);
       }
     });
 
-    function switchTab(tab) {
+    function switchAuthTab(tab) {
       if (tab === 'login') {
         document.getElementById('form-login').classList.remove('hidden');
         document.getElementById('form-register').classList.add('hidden');
-        document.getElementById('btn-login').classList.add('active');
-        document.getElementById('btn-register').classList.remove('active');
+        document.getElementById('btn-tab-login').classList.add('active');
+        document.getElementById('btn-tab-reg').classList.remove('active');
       } else {
         document.getElementById('form-login').classList.add('hidden');
         document.getElementById('form-register').classList.remove('hidden');
-        document.getElementById('btn-login').classList.remove('active');
-        document.getElementById('btn-register').classList.add('active');
+        document.getElementById('btn-tab-login').classList.remove('active');
+        document.getElementById('btn-tab-reg').classList.add('active');
       }
     }
 
     async function ejecutarLogin() {
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
-
-      if (!email || !password) {
-        alert('Por favor completá el correo y la contraseña.');
-        return;
-      }
+      if (!email || !password) return alert('Completá correo y contraseña.');
 
       try {
         const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
           method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error_description || 'Credenciales incorrectas');
 
-        if (!response.ok) {
-          alert('Error al ingresar: ' + (data.error_description || data.msg || 'Credenciales incorrectas'));
-        } else {
-          localStorage.setItem('user_email', email);
-          mostrarDashboard(email);
-        }
-      } catch (err) {
-        alert('Error de conexión: ' + err.message);
-      }
+        localStorage.setItem('user_email', email);
+        iniciarApp(email);
+      } catch (err) { alert('Error: ' + err.message); }
     }
 
     async function ejecutarRegistro() {
       const nombre = document.getElementById('reg-nombre').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value.trim();
-
-      if (!email || !password || !nombre) {
-        alert('Por favor completá todos los campos.');
-        return;
-      }
+      if (!email || !password || !nombre) return alert('Completá todos los campos.');
 
       try {
         const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
           method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            data: { full_name: nombre }
-          })
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, data: { full_name: nombre } })
         });
-
         const data = await response.json();
+        if (!response.ok) throw new Error(data.msg || 'Error al registrar');
 
-        if (!response.ok) {
-          alert('Error en el registro: ' + (data.msg || data.message || 'No se pudo crear la cuenta'));
-        } else {
-          alert('¡Cuenta creada exitosamente!');
-          switchTab('login');
-        }
-      } catch (err) {
-        alert('Error de conexión: ' + err.message);
+        alert('¡Cuenta creada exitosamente!');
+        switchAuthTab('login');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    function iniciarApp(email) {
+      document.getElementById('screen-auth').classList.add('hidden');
+      document.getElementById('app-nav').classList.remove('hidden');
+
+      // Cargar Datos del Usuario
+      document.getElementById('dash-user-email').innerText = email;
+      document.getElementById('perfil-email-display').innerText = email;
+      document.getElementById('card-holder-name').innerText = email.split('@')[0].toUpperCase();
+
+      // Generar ID de Tarjeta Virtual Único basado en email
+      const hash = Math.abs(email.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString().padStart(12, '0');
+      const cardID = `PYM-${hash.substring(0,4)}-${hash.substring(4,8)}-${hash.substring(8,12)}`;
+      document.getElementById('card-id-number').innerText = cardID;
+
+      // Generar QR Dinámico
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(cardID)}`;
+      document.getElementById('qr-code-img').src = qrUrl;
+
+      // Cargar Saldo
+      const savedBalance = localStorage.getItem('wallet_balance');
+      if (savedBalance) currentBalance = parseFloat(savedBalance);
+      actualizarSaldoDisplay();
+
+      navigateTo('dashboard');
+    }
+
+    function navigateTo(screen) {
+      const screens = ['auth', 'dashboard', 'billetera', 'tarjeta', 'anuncios', 'publicar', 'chat', 'perfil'];
+      screens.forEach(s => {
+        const el = document.getElementById(`screen-${s}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const activeScreen = document.getElementById(`screen-${screen}`);
+      if (activeScreen) activeScreen.classList.remove('hidden');
+
+      // Actualizar Nav Activo
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`nav-${screen}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function actualizarSaldoDisplay() {
+      document.getElementById('wallet-balance-display').innerText = `$${currentBalance.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+      localStorage.setItem('wallet_balance', currentBalance);
+    }
+
+    function cargasSaldoModal() {
+      const monto = prompt('Ingresá el monto a cargar ($):');
+      if (monto && !isNaN(monto) && parseFloat(monto) > 0) {
+        currentBalance += parseFloat(monto);
+        actualizarSaldoDisplay();
+        agregarMovimiento('Carga de Saldo', parseFloat(monto), true);
+        alert('¡Saldo cargado con éxito!');
       }
     }
 
-    function mostrarDashboard(email) {
-      document.getElementById('screen-auth').classList.add('hidden');
-      document.getElementById('screen-dashboard').classList.remove('hidden');
-      document.getElementById('user-info').innerText = 'Sesión iniciada como:\n' + email;
+    function transferirModal() {
+      const destino = prompt('Ingresá el ID de Tarjeta o Email de destino:');
+      if (!destino) return;
+      const monto = prompt('Monto a enviar ($):');
+      if (monto && !isNaN(monto) && parseFloat(monto) > 0) {
+        if (parseFloat(monto) > currentBalance) return alert('Saldo insuficiente.');
+        currentBalance -= parseFloat(monto);
+        actualizarSaldoDisplay();
+        agregarMovimiento(`Envío a ${destino}`, parseFloat(monto), false);
+        alert('Transferencia realizada con éxito.');
+      }
+    }
+
+    function agregarMovimiento(concepto, monto, esPositivo) {
+      const history = document.getElementById('tx-history');
+      const item = document.createElement('div');
+      item.className = 'transaction-item';
+      item.innerHTML = `
+        <span>${concepto}</span>
+        <span class="${esPositivo ? 'tx-positive' : 'tx-negative'}">${esPositivo ? '+' : '-'}$${monto.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+      `;
+      history.prepend(item);
     }
 
     function cerrarSesion() {
       localStorage.removeItem('user_email');
-      document.getElementById('screen-dashboard').classList.add('hidden');
+      document.getElementById('app-nav').classList.add('hidden');
+      navigateTo('auth');
       document.getElementById('screen-auth').classList.remove('hidden');
     }
   </script>
 </body>
-</html>
+                                                                             </html>
+        
