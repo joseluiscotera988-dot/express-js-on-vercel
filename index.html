@@ -21,6 +21,7 @@
     h1, h2, h3 { color: #111827; margin: 0 0 12px 0; }
     input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin-bottom: 12px; }
     .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-primary { background: #2563eb; color: white; }
     .btn-secondary { background: #10b981; color: white; }
     .btn-danger { background: #ef4444; color: white; }
@@ -61,14 +62,14 @@
       <div id="form-login">
         <input type="email" id="login-email" placeholder="Correo electrónico" />
         <input type="password" id="login-password" placeholder="Contraseña" />
-        <button class="btn btn-primary" onclick="ejecutarLogin()">Iniciar Sesión</button>
+        <button id="btn-login-submit" class="btn btn-primary" onclick="ejecutarLogin()">Iniciar Sesión</button>
       </div>
 
       <div id="form-register" class="hidden">
         <input type="text" id="reg-nombre" placeholder="Nombre completo" />
         <input type="email" id="reg-email" placeholder="Correo electrónico" />
         <input type="password" id="reg-password" placeholder="Contraseña" />
-        <button class="btn btn-secondary" onclick="ejecutarRegistro()">Crear Cuenta (KYC)</button>
+        <button id="btn-reg-submit" class="btn btn-secondary" onclick="ejecutarRegistro()">Crear Cuenta (KYC)</button>
       </div>
     </div>
 
@@ -222,9 +223,13 @@
     }
 
     async function ejecutarLogin() {
+      const btn = document.getElementById('btn-login-submit');
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
       if (!email || !password) return alert('Completá correo y contraseña.');
+
+      btn.innerText = 'Cargando...';
+      btn.disabled = true;
 
       try {
         const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -242,16 +247,24 @@
         localStorage.setItem('user_email', currentUser.email);
         localStorage.setItem('user_id', currentUser.id);
 
-        await asegurarBilleteraReal();
         iniciarAppReal();
-      } catch (err) { alert('Error: ' + err.message); }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.innerText = 'Iniciar Sesión';
+        btn.disabled = false;
+      }
     }
 
     async function ejecutarRegistro() {
+      const btn = document.getElementById('btn-reg-submit');
       const nombre = document.getElementById('reg-nombre').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value.trim();
       if (!email || !password || !nombre) return alert('Completá todos los campos.');
+
+      btn.innerText = 'Cargando...';
+      btn.disabled = true;
 
       try {
         const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
@@ -264,29 +277,15 @@
 
         alert('¡Cuenta creada con éxito! Ya podés ingresar.');
         switchAuthTab('login');
-      } catch (err) { alert('Error: ' + err.message); }
-    }
-
-    async function asegurarBilleteraReal() {
-      // Verificar si ya tiene billetera en la base de datos
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
-      });
-      const rows = await res.json();
-      
-      if (rows.length === 0) {
-        // Crear billetera inicial con bono de 1000 en la base de datos
-        await fetch(`${SUPABASE_URL}/rest/v1/wallets`, {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ user_id: currentUser.id, email: currentUser.email, balance: 1000.00 })
-        });
-        // Registrar transacción inicial
-        await registrarTransaccionReal('Bono Inicial KYC', 1000.00, 'CREDIT');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.innerText = 'Crear Cuenta (KYC)';
+        btn.disabled = false;
       }
     }
 
-    async function iniciarAppReal() {
+    function iniciarAppReal() {
       document.getElementById('screen-auth').classList.add('hidden');
       document.getElementById('app-nav').classList.remove('hidden');
 
@@ -294,49 +293,78 @@
       document.getElementById('perfil-email-display').innerText = currentUser.email;
       document.getElementById('card-holder-name').innerText = currentUser.email.split('@')[0].toUpperCase();
 
-      // Generar Tarjeta ID real basada en el ID del usuario
+      // Generar Tarjeta ID
       const cardID = `PYM-${currentUser.id.substring(0,4).toUpperCase()}-${currentUser.id.substring(4,8).toUpperCase()}-${currentUser.id.substring(8,12).toUpperCase()}`;
       document.getElementById('card-id-number').innerText = cardID;
       document.getElementById('qr-code-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(cardID)}`;
 
-      await sincronizarBilleteraYTransacciones();
       navigateTo('dashboard');
+
+      // Sincronizar servidor en segundo plano
+      asegurarYSincronizarBilletera();
+    }
+
+    async function asegurarYSincronizarBilletera() {
+      try {
+        // 1. Verificar billetera existente
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+        });
+        const rows = await res.json();
+        
+        if (Array.isArray(rows) && rows.length === 0) {
+          // Crear billetera inicial si no existe
+          await fetch(`${SUPABASE_URL}/rest/v1/wallets`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUser.id, email: currentUser.email, balance: 1000.00 })
+          });
+          await registrarTransaccionReal('Bono Inicial KYC', 1000.00, 'CREDIT');
+        }
+
+        await sincronizarBilleteraYTransacciones();
+      } catch (e) {
+        console.error('Error al sincronizar billetera:', e);
+      }
     }
 
     async function sincronizarBilleteraYTransacciones() {
-      // Obtener saldo real de Supabase
-      const resWallet = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
-      });
-      const wData = await resWallet.json();
-      if (wData.length > 0) {
-        walletData = wData[0];
-        document.getElementById('wallet-balance-display').innerText = `$${parseFloat(walletData.balance).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
-      }
+      try {
+        const resWallet = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+        });
+        const wData = await resWallet.json();
+        if (Array.isArray(wData) && wData.length > 0) {
+          walletData = wData[0];
+          document.getElementById('wallet-balance-display').innerText = `$${parseFloat(walletData.balance).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+        }
 
-      // Obtener transacciones reales de Supabase
-      const resTx = await fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${currentUser.id}&order=created_at.desc`, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
-      });
-      const txs = await resTx.json();
-      
-      const historyEl = document.getElementById('tx-history');
-      historyEl.innerHTML = '';
-      if (txs.length === 0) {
-        historyEl.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Sin movimientos registrados.</div>';
-        return;
-      }
+        const resTx = await fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${currentUser.id}&order=created_at.desc`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+        });
+        const txs = await resTx.json();
+        
+        const historyEl = document.getElementById('tx-history');
+        historyEl.innerHTML = '';
 
-      txs.forEach(tx => {
-        const item = document.createElement('div');
-        item.className = 'transaction-item';
-        const isPos = tx.type === 'CREDIT';
-        item.innerHTML = `
-          <span>${tx.concept}</span>
-          <span class="${isPos ? 'tx-positive' : 'tx-negative'}">${isPos ? '+' : '-'}$${parseFloat(tx.amount).toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
-        `;
-        historyEl.appendChild(item);
-      });
+        if (!Array.isArray(txs) || txs.length === 0) {
+          historyEl.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Sin movimientos registrados.</div>';
+          return;
+        }
+
+        txs.forEach(tx => {
+          const item = document.createElement('div');
+          item.className = 'transaction-item';
+          const isPos = tx.type === 'CREDIT';
+          item.innerHTML = `
+            <span>${tx.concept}</span>
+            <span class="${isPos ? 'tx-positive' : 'tx-negative'}">${isPos ? '+' : '-'}$${parseFloat(tx.amount).toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+          `;
+          historyEl.appendChild(item);
+        });
+      } catch (e) {
+        console.error('Error al obtener datos:', e);
+      }
     }
 
     async function cargarSaldoReal() {
@@ -344,9 +372,8 @@
       const monto = parseFloat(montoStr);
       if (!monto || isNaN(monto) || monto <= 0) return alert('Monto inválido.');
 
-      const nuevoSaldo = parseFloat(walletData.balance) + monto;
+      const nuevoSaldo = parseFloat(walletData.balance || 0) + monto;
 
-      // Actualizar en base de datos Supabase
       await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
@@ -355,7 +382,7 @@
 
       await registrarTransaccionReal('Carga de Fondos', monto, 'CREDIT');
       await sincronizarBilleteraYTransacciones();
-      alert('¡Saldo cargado exitosamente en el servidor!');
+      alert('¡Saldo cargado exitosamente!');
     }
 
     async function transferirReal() {
@@ -365,13 +392,12 @@
       const monto = parseFloat(montoStr);
       if (!monto || isNaN(monto) || monto <= 0) return alert('Monto inválido.');
 
-      if (monto > parseFloat(walletData.balance)) {
+      if (monto > parseFloat(walletData.balance || 0)) {
         return alert('Saldo insuficiente en la billetera.');
       }
 
       const nuevoSaldo = parseFloat(walletData.balance) - monto;
 
-      // Actualizar saldo propio en Supabase
       await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
@@ -380,20 +406,8 @@
 
       await registrarTransaccionReal(`Envío a ${destino}`, monto, 'DEBIT');
       await sincronizarBilleteraYTransacciones();
-      alert('¡Transferencia realizada y registrada en el servidor!');
+      alert('¡Transferencia realizada!');
     }
 
     async function registrarTransaccionReal(concepto, amount, type) {
-      await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, concept: concepto, amount: amount, type: type })
-      });
-    }
-
-    function navigateTo(screen) {
-      ['auth', 'dashboard', 'billetera', 'tarjeta', 'anuncios', 'publicar', 'chat', 'perfil'].forEach(s => {
-        const el = document.getElementById(`screen-${s}`);
-        if (el) el.classList.add('hidden');
-      });
-      const active = document.getEle
+      await fetc
