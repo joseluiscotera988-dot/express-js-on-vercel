@@ -1,212 +1,189 @@
-let currentUser = JSON.parse(localStorage.getItem('pm_user')) || null;
-let map, carrierMarker;
-let gpsWatchId = null;
-let activeReleaseToken = null;
+// ==========================================
+// BLOQUE 5: BILLETERA VIRTUAL Y TARJETA ID
+// ==========================================
 
-const mockFletes = [
-  { id: 'auc_101', origen: 'San Pedro', destino: 'Rosario', carga: 'Utilitario', monto: 65000, estado: 'Licitando' },
-  { id: 'auc_102', origen: 'Baradero', destino: 'Buenos Aires', carga: 'Camión Chasis', monto: 140000, estado: 'Asignado' }
-];
+window.userWallet = null;
+window.transactionsHistory = [];
 
-function initMap() {
-  const mapElement = document.getElementById('gps-map');
-  if (!mapElement || map) return;
-  map = L.map('gps-map').setView([-33.6787, -59.6647], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-  carrierMarker = L.marker([-33.6787, -59.6647]).addTo(map).bindPopup('🚛 Carga en Rastreo GPS').openPopup();
-}
+// 1. OBTENER / SINCRONIZAR BILLETERA DEL USUARIO
+async function syncUserWallet() {
+  if (!window.currentUser) throw new Error('Usuario no autenticado.');
 
-function updateAuthUI() {
-  const badgeText = document.getElementById('user-badge-text');
-  const badgeDot = document.getElementById('user-status-dot');
-  const cardHolder = document.getElementById('card-holder');
-  const profileName = document.getElementById('profile-name');
-  const profileRole = document.getElementById('profile-role');
-  const adminBadge = document.getElementById('admin-badge');
-  const adminBanner = document.getElementById('admin-top-banner');
-
-  if (currentUser) {
-    if (badgeText) badgeText.innerText = currentUser.name ? currentUser.name.split(' ')[0] + ' 🟢' : 'Usuario 🟢';
-    if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-    if (cardHolder) cardHolder.innerText = currentUser.name || 'Usuario';
-    if (profileName) profileName.innerText = currentUser.name || 'Usuario';
-    if (profileRole) profileRole.innerText = currentUser.role || 'Verificado';
-
-    if (currentUser.role === 'ADMIN_ROOT') {
-      if (adminBadge) adminBadge.classList.remove('hidden');
-      if (adminBanner) adminBanner.classList.remove('hidden');
-    } else {
-      if (adminBadge) adminBadge.classList.add('hidden');
-      if (adminBanner) adminBanner.classList.add('hidden');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${window.currentUser.id}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${window.currentAccessToken}`
     }
-  } else {
-    if (badgeText) badgeText.innerText = 'Ingresar';
-    if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400';
-    if (adminBanner) adminBanner.classList.add('hidden');
-  }
-}
-
-function switchView(viewName) {
-  ['home', 'fletes', 'wallet', 'profile', 'simulador', 'login', 'register'].forEach(v => {
-    const el = document.getElementById('view-' + v);
-    if (el) el.classList.add('hidden');
-    const navBtn = document.getElementById('nav-' + v);
-    if (navBtn) navBtn.classList.remove('text-amber-400', 'font-bold');
   });
 
-  const selectedView = document.getElementById('view-' + viewName);
-  const selectedNav = document.getElementById('nav-' + viewName);
-  if (selectedView) selectedView.classList.remove('hidden');
-  if (selectedNav) selectedNav.classList.add('text-amber-400', 'font-bold');
+  const wallets = await res.json();
+  if (!res.ok) throw new Error('Error al sincronizar billetera.');
 
-  if (viewName === 'fletes') {
-    setTimeout(initMap, 200);
-    if (typeof startChatPolling === 'function') startChatPolling('auc_101');
+  if (Array.isArray(wallets) && wallets.length > 0) {
+    window.userWallet = wallets[0];
   } else {
-    if (typeof chatInterval !== 'undefined' && chatInterval) clearInterval(chatInterval);
+    // Si no existía, crear billetera inicial por seguridad
+    const cardId = `PYM-${window.currentUser.id.substring(0,4).toUpperCase()}-${window.currentUser.id.substring(4,8).toUpperCase()}`;
+    const createRes = await fetch(`${SUPABASE_URL}/rest/v1/wallets`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${window.currentAccessToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        user_id: window.currentUser.id,
+        email: window.currentUser.email,
+        balance: 1000.00,
+        card_id: cardId
+      })
+    });
+    const newWallets = await createRes.json();
+    window.userWallet = newWallets[0];
   }
+
+  return window.userWallet;
 }
 
-function openAuthModal() {
-  if (typeof toggleAuthScreen === 'function') toggleAuthScreen('login');
-  switchView('login');
-}
+// 2. CARGAR HISTORIAL DE TRANSACCIONES
+async function getTransactionHistory() {
+  if (!window.currentUser) return [];
 
-function logout() {
-  localStorage.removeItem('pm_user');
-  currentUser = null;
-  updateAuthUI();
-  switchView('home');
-}
-
-function protectedAction(targetView) {
-  if (!currentUser) openAuthModal();
-  else switchView(targetView);
-}
-
-function renderFeed() {
-  const feedContainer = document.getElementById('live-auction-feed');
-  if (!feedContainer) return;
-
-  feedContainer.innerHTML = mockFletes.map(f => `
-    <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
-      <div class="flex justify-between items-center">
-        <h4 class="text-xs font-bold text-slate-200">${f.origen} ➔ ${f.destino}</h4>
-        <span class="text-emerald-400 font-bold text-xs">$ ${Number(f.monto).toLocaleString()}</span>
-      </div>
-      <button onclick="payWithMercadoPago('${f.id}', '${f.origen} a ${f.destino}', ${f.monto})" class="w-full bg-blue-600 text-white font-bold py-1.5 rounded-lg text-[10px]">
-        Pagar con Mercado Pago
-      </button>
-    </div>
-  `).join('');
-}
-
-async function payWithMercadoPago(auctionId, title, amount) {
-  if (!currentUser) return openAuthModal();
-  try {
-    const res = await fetch('/api/payments/create-preference', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ auctionId, title, amount, payerEmail: `${currentUser.phone || 'cliente'}@paseymire.com` })
-    });
-    const data = await res.json();
-    if (data.success && data.init_point) window.location.href = data.init_point;
-    else alert('❌ Error al generar preferencia Mercado Pago');
-  } catch (err) { alert('❌ Error conectando con pasarela'); }
-}
-
-async function handleCreateAuction(e) {
-  e.preventDefault();
-  const origen = document.getElementById('flete-origen').value;
-  const destino = document.getElementById('flete-destino').value;
-  const monto = document.getElementById('flete-monto').value;
-
-  try {
-    const res = await fetch('/api/auctions/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ origin: origen, destination: destino, amount: monto, userId: currentUser ? currentUser.id : 'usr_anon' })
-    });
-    const data = await res.json();
-    if (data.success) {
-      mockFletes.unshift({ id: data.auction.id, origen, destino, carga: 'General', monto, estado: 'Licitando' });
-      renderFeed();
-      alert('🚀 Subasta creada con retención del 5%');
-      switchView('home');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${window.currentUser.id}&order=created_at.desc`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${window.currentAccessToken}`
     }
-  } catch (err) { alert('❌ Error al crear subasta'); }
-}
-
-function runFinancialSimulation(e) {
-  e.preventDefault();
-  const monto = parseFloat(document.getElementById('sim-monto').value);
-  const resBox = document.getElementById('sim-result');
-  resBox.classList.remove('hidden');
-  resBox.innerHTML = `
-    <p class="text-amber-400 font-bold mb-1">⚡ SPLIT FINANCIERO 5%</p>
-    <p>• Total: <b>$ ${monto.toLocaleString()}</b></p>
-    <p>• Prestador (95%): <b>$ ${(monto * 0.95).toLocaleString()}</b></p>
-    <p>• Retención CBU Maestro (5%): <b class="text-emerald-400">$ ${(monto * 0.05).toLocaleString()}</b></p>
-  `;
-}
-
-function startGPSSender() {
-  if (!navigator.geolocation) return alert('❌ Dispositivo sin GPS.');
-  gpsWatchId = navigator.geolocation.watchPosition(async (pos) => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    if (carrierMarker) { carrierMarker.setLatLng([lat, lng]); if (map) map.panTo([lat, lng]); }
-    fetch('/api/gps/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ auctionId: 'auc_101', carrierId: currentUser ? currentUser.id : 'anon', lat, lng })
-    }).catch(() => {});
   });
-  alert('🛰️ Transmisión GPS activada.');
+
+  const history = await res.json();
+  if (!res.ok) throw new Error('Error al cargar movimientos.');
+
+  window.transactionsHistory = history;
+  return history;
 }
 
-function stopGPSSender() {
-  if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
-  alert('🔴 Transmisión GPS detenida.');
+// 3. CARGAR FONDOS A LA BILLETERA
+async function loadWalletFunds(amount, concept = 'Carga de Fondos') {
+  const numAmount = parseFloat(amount);
+  if (isNaN(numAmount) || numAmount <= 0) throw new Error('Monto inválido.');
+  if (!window.userWallet) await syncUserWallet();
+
+  const newBalance = parseFloat(window.userWallet.balance) + numAmount;
+
+  // Actualizar saldo
+  const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${window.currentUser.id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${window.currentAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ balance: newBalance })
+  });
+
+  if (!patchRes.ok) throw new Error('No se pudo actualizar el saldo.');
+
+  // Registrar movimiento
+  await recordTransaction(concept, numAmount, 'CREDIT');
+  
+  window.userWallet.balance = newBalance;
+  return newBalance;
 }
 
-async function generateEscrowQR(auctionId, amount) {
-  try {
-    const res = await fetch('/api/escrow/generate-qr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ auctionId, amount })
-    });
-    const data = await res.json();
-    if (data.success) {
-      activeReleaseToken = data.releaseToken;
-      document.getElementById('qr-box').classList.remove('hidden');
-      document.getElementById('qr-image').src = data.qrDataUrl;
-      alert('📲 QR de Liberación Escrow Generado.');
-    }
-  } catch (err) { alert('❌ Error generando QR'); }
+// 4. TRANSFERIR DINERO A OTRO USUARIO (POR EMAIL O TARJETA ID)
+async function transferMoney(destinationIdentifier, amount) {
+  const numAmount = parseFloat(amount);
+  if (isNaN(numAmount) || numAmount <= 0) throw new Error('Monto de transferencia inválido.');
+  if (!window.userWallet) await syncUserWallet();
+
+  if (parseFloat(window.userWallet.balance) < numAmount) {
+    throw new Error('Saldo insuficiente para realizar la operación.');
+  }
+
+  // Buscar billetera de destino
+  const queryParam = destinationIdentifier.includes('@') 
+    ? `email=eq.${encodeURIComponent(destinationIdentifier.trim())}` 
+    : `card_id=eq.${encodeURIComponent(destinationIdentifier.trim().toUpperCase())}`;
+
+  const destRes = await fetch(`${SUPABASE_URL}/rest/v1/wallets?${queryParam}`, {
+    headers: { 'apikey': SUPABASE_KEY }
+  });
+  const destWallets = await destRes.json();
+
+  if (!Array.isArray(destWallets) || destWallets.length === 0) {
+    throw new Error('Usuario o Tarjeta ID de destino no encontrada.');
+  }
+
+  const destWallet = destWallets[0];
+  if (destWallet.user_id === window.currentUser.id) {
+    throw new Error('No podés transferirte dinero a vos mismo.');
+  }
+
+  // A. Restar al emisor
+  const senderNewBalance = parseFloat(window.userWallet.balance) - numAmount;
+  await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${window.currentUser.id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${window.currentAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ balance: senderNewBalance })
+  });
+
+  // B. Sumar al receptor
+  const receiverNewBalance = parseFloat(destWallet.balance) + numAmount;
+  await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${destWallet.user_id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ balance: receiverNewBalance })
+  });
+
+  // C. Registrar transacciones en ambos historiales
+  await recordTransaction(`Envío a ${destWallet.email}`, numAmount, 'DEBIT');
+  
+  // Registrar crédito al destino
+  await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: destWallet.user_id,
+      concept: `Recibido de ${window.currentUser.email}`,
+      amount: numAmount,
+      type: 'CREDIT'
+    })
+  });
+
+  window.userWallet.balance = senderNewBalance;
+  return senderNewBalance;
 }
 
-async function simulateClientQRScan() {
-  if (!activeReleaseToken) return alert('❌ Generá un QR primero.');
-  try {
-    const res = await fetch('/api/escrow/release', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ releaseToken: activeReleaseToken })
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert('🎉 ¡Pago Escrow Liberado al Transportista!');
-      document.getElementById('qr-box').classList.add('hidden');
-      activeReleaseToken = null;
-    }
-  } catch (err) { alert('❌ Error liberando pago'); }
+// 5. REGISTRAR TRANSACCIÓN EN HISTORIAL
+async function recordTransaction(concept, amount, type) {
+  await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${window.currentAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      user_id: window.currentUser.id,
+      concept: concept,
+      amount: amount,
+      type: type
+    })
+  });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  updateAuthUI();
-  renderFeed();
-  if (typeof loadAdBanners === 'function') loadAdBanners();
-});
-                                              
+// 6. OBTENER URL DEL CÓDIGO QR DE IDENTIDAD
+function getVirtualCardQRUrl() {
+  if (!window.userWallet || !window.userWallet.card_id) return '';
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.userWallet.card_id)}`;
+                                 }
+                          
