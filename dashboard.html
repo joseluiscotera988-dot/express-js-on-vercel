@@ -28,20 +28,19 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const userRaw = localStorage.getItem('user');
-      if (!userRaw) {
+      const email = localStorage.getItem('user_email');
+      if (!email) {
         alert('No hay una sesión activa. Redirigiendo al login...');
-        window.location.href = '../index.html';
+        window.location.href = 'index.html';
       } else {
-        const user = JSON.parse(userRaw);
-        document.getElementById('user-info').innerText = 'Sesión iniciada como:\n' + user.email;
+        document.getElementById('user-info').innerText = 'Sesión iniciada como:\n' + email;
       }
     });
 
     function cerrarSesion() {
-      localStorage.removeItem('user');
+      localStorage.removeItem('user_email');
       alert('Sesión cerrada correctamente.');
-      window.location.href = '../index.html';
+      window.location.href = 'index.html';
     }
   </script>
 </body>
