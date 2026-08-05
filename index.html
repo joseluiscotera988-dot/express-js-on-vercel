@@ -3,25 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase Y Mire - Acceso</title>
+  <title>Pase Y Mire</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 24px; max-width: 400px; width: 100%; }
-    h2 { margin-top: 0; color: #111; text-align: center; }
+    h2, h1 { margin-top: 0; color: #111; text-align: center; }
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
     .tab-btn { flex: 1; padding: 10px; border: none; background: #e5e7eb; border-radius: 6px; cursor: pointer; font-weight: bold; color: #374151; }
     .tab-btn.active { background: #2563eb; color: white; }
     .form-group { display: flex; flex-direction: column; gap: 12px; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     input { padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; width: 100%; }
     .btn-submit { padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 8px; }
     .btn-submit:hover { background: #1d4ed8; }
+    .btn-logout { padding: 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px; }
+    .btn-logout:hover { background: #dc2626; }
+    .user-box { background: #e0e7ff; color: #1e40af; padding: 12px; border-radius: 8px; font-weight: bold; margin: 20px 0; word-break: break-all; text-align: center; }
   </style>
 </head>
 <body>
 
-  <div class="card">
+  <!-- PANTALLA 1: INICIO DE SESIÓN Y REGISTRO -->
+  <div id="screen-auth" class="card">
     <h2>Pase Y Mire</h2>
 
     <div class="tabs">
@@ -45,9 +49,25 @@
     </div>
   </div>
 
+  <!-- PANTALLA 2: PANEL PRINCIPAL (DASHBOARD) -->
+  <div id="screen-dashboard" class="card hidden">
+    <h1>¡Bienvenido!</h1>
+    <p style="text-align:center; color:#4b5563;">Has ingresado con éxito al panel principal.</p>
+    <div id="user-info" class="user-box">Cargando sesión...</div>
+    <button type="button" class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
+
+    // Auto-login si ya inició sesión previamente
+    document.addEventListener('DOMContentLoaded', () => {
+      const email = localStorage.getItem('user_email');
+      if (email) {
+        mostrarDashboard(email);
+      }
+    });
 
     function switchTab(tab) {
       if (tab === 'login') {
@@ -87,9 +107,8 @@
         if (!response.ok) {
           alert('Error al ingresar: ' + (data.error_description || data.msg || 'Credenciales incorrectas'));
         } else {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          alert('¡Bienvenido!');
-          window.location.href = 'src/dashboard.html';
+          localStorage.setItem('user_email', email);
+          mostrarDashboard(email);
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
@@ -131,6 +150,18 @@
       } catch (err) {
         alert('Error de conexión: ' + err.message);
       }
+    }
+
+    function mostrarDashboard(email) {
+      document.getElementById('screen-auth').classList.add('hidden');
+      document.getElementById('screen-dashboard').classList.remove('hidden');
+      document.getElementById('user-info').innerText = 'Sesión iniciada como:\n' + email;
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('user_email');
+      document.getElementById('screen-dashboard').classList.add('hidden');
+      document.getElementById('screen-auth').classList.remove('hidden');
     }
   </script>
 </body>
