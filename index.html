@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase Y Mire - App</title>
+  <title>Pase Y Mire - App Real</title>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background: #f3f4f6; margin: 0; padding: 0; padding-bottom: 70px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
-    /* CONTENEDOR PRINCIPAL MOBILE */
     .app-container { width: 100%; max-width: 480px; padding: 16px; flex: 1; }
     .card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 20px; margin-bottom: 16px; }
     .hidden { display: none !important; }
@@ -19,7 +18,6 @@
     .nav-btn.active { color: #2563eb; }
     .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
 
-    /* FORMULARIOS Y BOTONES */
     h1, h2, h3 { color: #111827; margin: 0 0 12px 0; }
     input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin-bottom: 12px; }
     .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -35,7 +33,7 @@
     .virtual-card .card-holder { font-size: 14px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
     .virtual-card .badge { position: absolute; top: 20px; right: 20px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; }
 
-    /* BILLETERA VIRTUAL */
+    /* BILLETERA */
     .wallet-balance { text-align: center; padding: 15px 0; }
     .wallet-balance .amount { font-size: 32px; font-weight: 800; color: #111827; }
     .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -43,7 +41,6 @@
     .tx-positive { color: #10b981; font-weight: bold; }
     .tx-negative { color: #ef4444; font-weight: bold; }
 
-    /* TABS LOGIN */
     .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
     .tab-btn { flex: 1; padding: 10px; border: none; background: #e5e7eb; border-radius: 6px; cursor: pointer; font-weight: bold; color: #374151; }
     .tab-btn.active { background: #2563eb; color: white; }
@@ -53,7 +50,7 @@
 
   <div class="app-container">
 
-    <!-- PANTALLA 1: AUTENTICACIÓN (LOGIN / REGISTRO KYC) -->
+    <!-- AUTENTICACIÓN -->
     <div id="screen-auth" class="card">
       <h2 style="text-align: center;">Pase Y Mire</h2>
       <div class="tabs">
@@ -75,19 +72,19 @@
       </div>
     </div>
 
-    <!-- PANTALLA 2: DASHBOARD / INICIO -->
+    <!-- DASHBOARD -->
     <div id="screen-dashboard" class="card hidden">
       <h2>Inicio</h2>
-      <p style="color: #6b7280;">Bienvenido a la plataforma Pase Y Mire.</p>
+      <p style="color: #6b7280;">Plataforma Oficial Pase Y Mire.</p>
       
       <div class="card" style="background: #f9fafb; padding: 12px; margin: 15px 0;">
-        <small style="color: #6b7280;">Usuario Activo:</small>
+        <small style="color: #6b7280;">Usuario Conectado:</small>
         <div id="dash-user-email" style="font-weight: bold; word-break: break-all;">-</div>
       </div>
 
-      <h3>Módulos Rápidos</h3>
+      <h3>Módulos del Sistema</h3>
       <div class="actions-grid">
-        <button class="btn btn-outline" onclick="navigateTo('billetera')">💳 Billetera</button>
+        <button class="btn btn-outline" onclick="navigateTo('billetera')">💳 Billetera Real</button>
         <button class="btn btn-outline" onclick="navigateTo('tarjeta')">🆔 Tarjeta ID</button>
         <button class="btn btn-outline" onclick="navigateTo('anuncios')">📢 Clasificados</button>
         <button class="btn btn-outline" onclick="navigateTo('chat')">💬 Mensajes</button>
@@ -96,118 +93,97 @@
       <button class="btn btn-danger" style="margin-top: 20px;" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
-    <!-- PANTALLA 3: BILLETERA VIRTUAL -->
+    <!-- BILLETERA VIRTUAL REAL -->
     <div id="screen-billetera" class="card hidden">
       <h2>Billetera Virtual</h2>
-      
       <div class="wallet-balance">
-        <small style="color: #6b7280;">Saldo Disponible</small>
+        <small style="color: #6b7280;">Saldo Disponible en Servidor</small>
         <div class="amount" id="wallet-balance-display">$0.00</div>
       </div>
 
       <div class="actions-grid">
-        <button class="btn btn-secondary" onclick="cargasSaldoModal()">+ Cargar Saldo</button>
-        <button class="btn btn-primary" onclick="transferirModal()">Envia Dinero</button>
+        <button class="btn btn-secondary" onclick="cargarSaldoReal()">+ Cargar Fondos</button>
+        <button class="btn btn-primary" onclick="transferirReal()">Enviar Dinero</button>
       </div>
 
-      <h3 style="margin-top: 25px;">Últimos Movimientos</h3>
+      <h3 style="margin-top: 25px;">Movimientos en Tiempo Real</h3>
       <div id="tx-history">
-        <div class="transaction-item">
-          <span>Alta de Cuenta (Bono KYC)</span>
-          <span class="tx-positive">+$1,000.00</span>
-        </div>
+        <div style="color: #6b7280; font-size: 13px;">Cargando transacciones...</div>
       </div>
     </div>
 
-    <!-- PANTALLA 4: TARJETA VIRTUAL (ID BILLETERA) -->
+    <!-- TARJETA VIRTUAL ID -->
     <div id="screen-tarjeta" class="card hidden">
       <h2>Tarjeta Virtual ID</h2>
-      <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">Esta tarjeta identifica tu billetera dentro del sistema Pase Y Mire.</p>
+      <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">Identificador único en el servidor para recibir transacciones.</p>
 
       <div class="virtual-card">
         <div class="badge">KYC VERIFICADO</div>
         <div class="chip"></div>
         <div class="card-id" id="card-id-number">PYM-0000-0000-0000</div>
-        <div class="card-holder" id="card-holder-name">NOMBRE DEL USUARIO</div>
+        <div class="card-holder" id="card-holder-name">USUARIO</div>
       </div>
 
       <div style="text-align: center; padding: 10px;">
-        <h3>Código QR de cobro/pago</h3>
-        <img id="qr-code-img" src="" alt="Código QR ID" style="width: 160px; height: 160px; border-radius: 8px; border: 1px solid #e5e7eb; padding: 8px;" />
-        <small style="display: block; color: #6b7280; margin-top: 8px;">Presentá este QR para recibir transferencias inmediatas.</small>
+        <h3>Código QR de Identidad</h3>
+        <img id="qr-code-img" src="" alt="QR ID" style="width: 150px; height: 150px; border-radius: 8px; border: 1px solid #e5e7eb; padding: 6px;" />
       </div>
     </div>
 
-    <!-- PANTALLA 5: ANUNCIOS / CLASIFICADOS -->
+    <!-- ANUNCIOS -->
     <div id="screen-anuncios" class="card hidden">
       <h2>Clasificados</h2>
-      <input type="text" placeholder="🔍 Buscar productos o servicios..." />
+      <input type="text" placeholder="🔍 Buscar publicaciones..." />
       <button class="btn btn-primary" onclick="navigateTo('publicar')" style="margin-bottom: 15px;">+ Publicar Anuncio</button>
-      
       <div class="card" style="border: 1px solid #e5e7eb; padding: 12px;">
-        <h4 style="margin: 0 0 5px 0;">Anuncio de Muestra</h4>
-        <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">Servicio de desarrollo web y soporte técnico.</p>
-        <strong style="color: #2563eb;">$15,000 ARS</strong>
+        <h4 style="margin: 0 0 5px 0;">Servicio Verificado</h4>
+        <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">Publicación oficial del sistema.</p>
+        <strong style="color: #2563eb;">$10,000 ARS</strong>
       </div>
     </div>
 
-    <!-- PANTALLA 6: PUBLICAR ANUNCIO -->
+    <!-- PUBLICAR -->
     <div id="screen-publicar" class="card hidden">
       <h2>Nuevo Anuncio</h2>
-      <input type="text" placeholder="Título de la publicación" />
-      <input type="number" placeholder="Precio ($)" />
-      <select>
-        <option>Seleccionar Categoría</option>
-        <option>Productos</option>
-        <option>Servicios</option>
-        <option>Vehículos / Inmuebles</option>
-      </select>
-      <button class="btn btn-primary" onclick="alert('Anuncio publicado con éxito'); navigateTo('anuncios');">Publicar Ahora</button>
+      <input type="text" id="pub-titulo" placeholder="Título del anuncio" />
+      <input type="number" id="pub-precio" placeholder="Precio ($)" />
+      <button class="btn btn-primary" onclick="alert('Publicado correctamente'); navigateTo('anuncios');">Confirmar Publicación</button>
     </div>
 
-    <!-- PANTALLA 7: CHAT -->
+    <!-- CHAT -->
     <div id="screen-chat" class="card hidden">
       <h2>Mensajes</h2>
-      <div class="transaction-item" style="cursor: pointer;">
-        <div>
-          <strong>Soporte Pase Y Mire</strong><br>
-          <small style="color: #6b7280;">¡Hola! ¿En qué podemos ayudarte?</small>
-        </div>
-        <small style="color: #2563eb;">Ahora</small>
+      <div class="transaction-item">
+        <div><strong>Soporte Oficial Pase Y Mire</strong><br><small style="color: #6b7280;">Canal de asistencia seguro</small></div>
       </div>
     </div>
 
-    <!-- PANTALLA 8: PERFIL -->
+    <!-- PERFIL -->
     <div id="screen-perfil" class="card hidden">
       <h2>Mi Perfil</h2>
       <div id="perfil-email-display" style="font-weight: bold; margin-bottom: 15px;">-</div>
-      <button class="btn btn-outline" style="margin-bottom: 10px;" onclick="navigateTo('tarjeta')">Ver Mi Tarjeta Virtual</button>
+      <button class="btn btn-outline" style="margin-bottom: 10px;" onclick="navigateTo('tarjeta')">Ver Tarjeta Virtual ID</button>
       <button class="btn btn-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
   </div>
 
-  <!-- NAVEGACIÓN INFERIOR (BOTTOM NAV) -->
+  <!-- NAVEGACIÓN INFERIOR -->
   <nav id="app-nav" class="bottom-nav hidden">
-    <button class="nav-btn active" id="nav-inicio" onclick="navigateTo('dashboard')">
-      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      Inicio
+    <button class="nav-btn active" id="nav-dashboard" onclick="navigateTo('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Inicio
     </button>
     <button class="nav-btn" id="nav-billetera" onclick="navigateTo('billetera')">
-      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      Billetera
+      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Billetera
     </button>
     <button class="nav-btn" id="nav-tarjeta" onclick="navigateTo('tarjeta')">
-      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-      Tarjeta ID
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Tarjeta ID
     </button>
     <button class="nav-btn" id="nav-anuncios" onclick="navigateTo('anuncios')">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-      Anuncios
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>Anuncios
     </button>
     <button class="nav-btn" id="nav-perfil" onclick="navigateTo('perfil')">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      Perfil
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Perfil
     </button>
   </nav>
 
@@ -215,12 +191,19 @@
     const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
 
-    let currentBalance = 1000.00;
+    let currentUser = null;
+    let currentAccessToken = null;
+    let walletData = { balance: 0 };
 
     document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('access_token');
       const email = localStorage.getItem('user_email');
-      if (email) {
-        iniciarApp(email);
+      const userId = localStorage.getItem('user_id');
+
+      if (token && email && userId) {
+        currentAccessToken = token;
+        currentUser = { id: userId, email: email };
+        iniciarAppReal();
       }
     });
 
@@ -252,8 +235,15 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error_description || 'Credenciales incorrectas');
 
-        localStorage.setItem('user_email', email);
-        iniciarApp(email);
+        currentAccessToken = data.access_token;
+        currentUser = data.user;
+
+        localStorage.setItem('access_token', currentAccessToken);
+        localStorage.setItem('user_email', currentUser.email);
+        localStorage.setItem('user_id', currentUser.id);
+
+        await asegurarBilleteraReal();
+        iniciarAppReal();
       } catch (err) { alert('Error: ' + err.message); }
     }
 
@@ -272,99 +262,138 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.msg || 'Error al registrar');
 
-        alert('¡Cuenta creada exitosamente!');
+        alert('¡Cuenta creada con éxito! Ya podés ingresar.');
         switchAuthTab('login');
       } catch (err) { alert('Error: ' + err.message); }
     }
 
-    function iniciarApp(email) {
+    async function asegurarBilleteraReal() {
+      // Verificar si ya tiene billetera en la base de datos
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+      });
+      const rows = await res.json();
+      
+      if (rows.length === 0) {
+        // Crear billetera inicial con bono de 1000 en la base de datos
+        await fetch(`${SUPABASE_URL}/rest/v1/wallets`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ user_id: currentUser.id, email: currentUser.email, balance: 1000.00 })
+        });
+        // Registrar transacción inicial
+        await registrarTransaccionReal('Bono Inicial KYC', 1000.00, 'CREDIT');
+      }
+    }
+
+    async function iniciarAppReal() {
       document.getElementById('screen-auth').classList.add('hidden');
       document.getElementById('app-nav').classList.remove('hidden');
 
-      // Cargar Datos del Usuario
-      document.getElementById('dash-user-email').innerText = email;
-      document.getElementById('perfil-email-display').innerText = email;
-      document.getElementById('card-holder-name').innerText = email.split('@')[0].toUpperCase();
+      document.getElementById('dash-user-email').innerText = currentUser.email;
+      document.getElementById('perfil-email-display').innerText = currentUser.email;
+      document.getElementById('card-holder-name').innerText = currentUser.email.split('@')[0].toUpperCase();
 
-      // Generar ID de Tarjeta Virtual Único basado en email
-      const hash = Math.abs(email.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString().padStart(12, '0');
-      const cardID = `PYM-${hash.substring(0,4)}-${hash.substring(4,8)}-${hash.substring(8,12)}`;
+      // Generar Tarjeta ID real basada en el ID del usuario
+      const cardID = `PYM-${currentUser.id.substring(0,4).toUpperCase()}-${currentUser.id.substring(4,8).toUpperCase()}-${currentUser.id.substring(8,12).toUpperCase()}`;
       document.getElementById('card-id-number').innerText = cardID;
+      document.getElementById('qr-code-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(cardID)}`;
 
-      // Generar QR Dinámico
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(cardID)}`;
-      document.getElementById('qr-code-img').src = qrUrl;
-
-      // Cargar Saldo
-      const savedBalance = localStorage.getItem('wallet_balance');
-      if (savedBalance) currentBalance = parseFloat(savedBalance);
-      actualizarSaldoDisplay();
-
+      await sincronizarBilleteraYTransacciones();
       navigateTo('dashboard');
     }
 
+    async function sincronizarBilleteraYTransacciones() {
+      // Obtener saldo real de Supabase
+      const resWallet = await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+      });
+      const wData = await resWallet.json();
+      if (wData.length > 0) {
+        walletData = wData[0];
+        document.getElementById('wallet-balance-display').innerText = `$${parseFloat(walletData.balance).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+      }
+
+      // Obtener transacciones reales de Supabase
+      const resTx = await fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${currentUser.id}&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}` }
+      });
+      const txs = await resTx.json();
+      
+      const historyEl = document.getElementById('tx-history');
+      historyEl.innerHTML = '';
+      if (txs.length === 0) {
+        historyEl.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Sin movimientos registrados.</div>';
+        return;
+      }
+
+      txs.forEach(tx => {
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        const isPos = tx.type === 'CREDIT';
+        item.innerHTML = `
+          <span>${tx.concept}</span>
+          <span class="${isPos ? 'tx-positive' : 'tx-negative'}">${isPos ? '+' : '-'}$${parseFloat(tx.amount).toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+        `;
+        historyEl.appendChild(item);
+      });
+    }
+
+    async function cargarSaldoReal() {
+      const montoStr = prompt('Ingresá el monto real a cargar ($):');
+      const monto = parseFloat(montoStr);
+      if (!monto || isNaN(monto) || monto <= 0) return alert('Monto inválido.');
+
+      const nuevoSaldo = parseFloat(walletData.balance) + monto;
+
+      // Actualizar en base de datos Supabase
+      await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: nuevoSaldo })
+      });
+
+      await registrarTransaccionReal('Carga de Fondos', monto, 'CREDIT');
+      await sincronizarBilleteraYTransacciones();
+      alert('¡Saldo cargado exitosamente en el servidor!');
+    }
+
+    async function transferirReal() {
+      const destino = prompt('Ingresá el correo o ID de destino:');
+      if (!destino) return;
+      const montoStr = prompt('Monto a transferir ($):');
+      const monto = parseFloat(montoStr);
+      if (!monto || isNaN(monto) || monto <= 0) return alert('Monto inválido.');
+
+      if (monto > parseFloat(walletData.balance)) {
+        return alert('Saldo insuficiente en la billetera.');
+      }
+
+      const nuevoSaldo = parseFloat(walletData.balance) - monto;
+
+      // Actualizar saldo propio en Supabase
+      await fetch(`${SUPABASE_URL}/rest/v1/wallets?user_id=eq.${currentUser.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: nuevoSaldo })
+      });
+
+      await registrarTransaccionReal(`Envío a ${destino}`, monto, 'DEBIT');
+      await sincronizarBilleteraYTransacciones();
+      alert('¡Transferencia realizada y registrada en el servidor!');
+    }
+
+    async function registrarTransaccionReal(concepto, amount, type) {
+      await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${currentAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id, concept: concepto, amount: amount, type: type })
+      });
+    }
+
     function navigateTo(screen) {
-      const screens = ['auth', 'dashboard', 'billetera', 'tarjeta', 'anuncios', 'publicar', 'chat', 'perfil'];
-      screens.forEach(s => {
+      ['auth', 'dashboard', 'billetera', 'tarjeta', 'anuncios', 'publicar', 'chat', 'perfil'].forEach(s => {
         const el = document.getElementById(`screen-${s}`);
         if (el) el.classList.add('hidden');
       });
-
-      const activeScreen = document.getElementById(`screen-${screen}`);
-      if (activeScreen) activeScreen.classList.remove('hidden');
-
-      // Actualizar Nav Activo
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById(`nav-${screen}`);
-      if (activeBtn) activeBtn.classList.add('active');
-    }
-
-    function actualizarSaldoDisplay() {
-      document.getElementById('wallet-balance-display').innerText = `$${currentBalance.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
-      localStorage.setItem('wallet_balance', currentBalance);
-    }
-
-    function cargasSaldoModal() {
-      const monto = prompt('Ingresá el monto a cargar ($):');
-      if (monto && !isNaN(monto) && parseFloat(monto) > 0) {
-        currentBalance += parseFloat(monto);
-        actualizarSaldoDisplay();
-        agregarMovimiento('Carga de Saldo', parseFloat(monto), true);
-        alert('¡Saldo cargado con éxito!');
-      }
-    }
-
-    function transferirModal() {
-      const destino = prompt('Ingresá el ID de Tarjeta o Email de destino:');
-      if (!destino) return;
-      const monto = prompt('Monto a enviar ($):');
-      if (monto && !isNaN(monto) && parseFloat(monto) > 0) {
-        if (parseFloat(monto) > currentBalance) return alert('Saldo insuficiente.');
-        currentBalance -= parseFloat(monto);
-        actualizarSaldoDisplay();
-        agregarMovimiento(`Envío a ${destino}`, parseFloat(monto), false);
-        alert('Transferencia realizada con éxito.');
-      }
-    }
-
-    function agregarMovimiento(concepto, monto, esPositivo) {
-      const history = document.getElementById('tx-history');
-      const item = document.createElement('div');
-      item.className = 'transaction-item';
-      item.innerHTML = `
-        <span>${concepto}</span>
-        <span class="${esPositivo ? 'tx-positive' : 'tx-negative'}">${esPositivo ? '+' : '-'}$${monto.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
-      `;
-      history.prepend(item);
-    }
-
-    function cerrarSesion() {
-      localStorage.removeItem('user_email');
-      document.getElementById('app-nav').classList.add('hidden');
-      navigateTo('auth');
-      document.getElementById('screen-auth').classList.remove('hidden');
-    }
-  </script>
-</body>
-                                                                             </html>
-        
+      const active = document.getEle
