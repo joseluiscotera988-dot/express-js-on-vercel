@@ -45,11 +45,9 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-javascript@2"></script>
   <script>
     const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     function switchTab(tab) {
       if (tab === 'login') {
@@ -70,18 +68,31 @@
       const password = document.getElementById('login-password').value.trim();
 
       if (!email || !password) {
-        alert('Por favor completá todos los campos.');
+        alert('Por favor completá el correo y la contraseña.');
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      try {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
 
-      if (error) {
-        alert('Error al ingresar: ' + error.message);
-      } else {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        alert('¡Bienvenido!');
-        window.location.href = 'src/dashboard.html';
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert('Error al ingresar: ' + (data.error_description || data.msg || 'Credenciales incorrectas'));
+        } else {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          alert('¡Bienvenido!');
+          window.location.href = 'src/dashboard.html';
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -95,17 +106,30 @@
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: nombre } }
-      });
+      try {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            data: { full_name: nombre }
+          })
+        });
 
-      if (error) {
-        alert('Error en el registro: ' + error.message);
-      } else {
-        alert('¡Cuenta creada exitosamente en Supabase!');
-        switchTab('login');
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert('Error en el registro: ' + (data.msg || data.message || 'No se pudo crear la cuenta'));
+        } else {
+          alert('¡Cuenta creada exitosamente!');
+          switchTab('login');
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
   </script>
