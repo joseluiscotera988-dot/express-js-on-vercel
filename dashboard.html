@@ -26,27 +26,19 @@
     <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-javascript@2"></script>
   <script>
-    const SUPABASE_URL = 'https://onjyajaiqpfilvsizpdb.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uanlhamFpcXBmaWx2c2l6cGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MDk4MDAsImV4cCI6MjEwMTM4NTgwMH0.2AurjHS0hkFqGoI2r2kkczNcMQ8RBg5GwCWOq0Qjwes';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // Verificar si el usuario inició sesión realmente
-    document.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-
-      if (!session) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const userRaw = localStorage.getItem('user');
+      if (!userRaw) {
         alert('No hay una sesión activa. Redirigiendo al login...');
         window.location.href = '../index.html';
       } else {
-        const user = session.user;
+        const user = JSON.parse(userRaw);
         document.getElementById('user-info').innerText = 'Sesión iniciada como:\n' + user.email;
       }
     });
 
-    async function cerrarSesion() {
-      await supabaseClient.auth.signOut();
+    function cerrarSesion() {
       localStorage.removeItem('user');
       alert('Sesión cerrada correctamente.');
       window.location.href = '../index.html';
