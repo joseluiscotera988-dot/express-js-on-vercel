@@ -1,9 +1,3 @@
 [build]
+  publish = "public"
   command = ""
-  publish = "."
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  
